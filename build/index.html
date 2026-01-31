@@ -6,9 +6,9 @@
     <title>Event Tracker</title>
 
     <!-- Materialize CSS -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
+    <link href="materialize.min.css" rel="stylesheet">
     <!-- Material Icons -->
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="material-icons.css" rel="stylesheet">
 
     <style>
         * {
@@ -1097,13 +1097,16 @@
                 hour: 'hour',
                 hours: 'hours',
                 eventName: 'Event Name',
-                color: 'Color',
+                color: 'Timeline Color',
                 complementaryEvent: 'Complementary Event',
-                complementaryColor: 'Complementary Color',
+                complementaryColor: 'Complementary Timeline Color',
                 createsVariant: 'Creates a mutually exclusive variant',
                 thisActionCannotBeUndone: 'This action cannot be undone.',
                 startTimeBeforeEnd: 'Start time must be before end time',
-                eventsCannotOverlap: 'Events of the same type cannot overlap'
+                eventsCannotOverlap: 'Events of the same type cannot overlap',
+                save: 'Save',
+                pleaseEnterSessionName: 'Please enter a session name',
+                sessionRenamed: 'Session renamed!'
             },
             fr: {
                 sessions: 'Sessions',
@@ -1174,13 +1177,16 @@
                 hour: 'heure',
                 hours: 'heures',
                 eventName: 'Nom de l\'Événement',
-                color: 'Couleur',
+                color: 'Couleur de la Timeline',
                 complementaryEvent: 'Événement Complémentaire',
-                complementaryColor: 'Couleur Complémentaire',
+                complementaryColor: 'Couleur Complémentaire de la Timeline',
                 createsVariant: 'Crée une variante mutuellement exclusive',
                 thisActionCannotBeUndone: 'Cette action ne peut pas être annulée.',
                 startTimeBeforeEnd: 'L\'heure de début doit être avant l\'heure de fin',
-                eventsCannotOverlap: 'Les événements du même type ne peuvent pas se chevaucher'
+                eventsCannotOverlap: 'Les événements du même type ne peuvent pas se chevaucher',
+                save: 'Enregistrer',
+                pleaseEnterSessionName: 'Veuillez entrer un nom de session',
+                sessionRenamed: 'Session renommée !'
             }
         };
 
@@ -1388,7 +1394,34 @@
                 const modified = new Date(session.lastModified).toLocaleString();
                 return `
                     <tr id="session-row-${session.id}" style="cursor: pointer;" onclick="openSession('${session.id}')">
-                        <td style="font-weight: 500;">${session.name}</td>
+                        <td style="font-weight: 500;">
+                            <div id="session-name-display-${session.id}" style="display: flex; align-items: center; gap: 8px;">
+                                <span>${session.name}</span>
+                                <i class="material-icons"
+                                   style="font-size: 18px; color: #9e9e9e; cursor: pointer; opacity: 0.6;"
+                                   onclick="event.stopPropagation(); startRenameSession('${session.id}', '${session.name.replace(/'/g, "\\'")}')">edit</i>
+                            </div>
+                            <div id="session-name-edit-${session.id}" style="display: none;">
+                                <input type="text"
+                                       id="session-name-input-${session.id}"
+                                       value="${session.name.replace(/"/g, '&quot;')}"
+                                       style="margin: 0; height: 2rem; padding: 0 8px; border: 2px solid #7c3aed; border-radius: 4px;"
+                                       onclick="event.stopPropagation()"
+                                       onkeydown="handleRenameKeydown(event, '${session.id}')"
+                                       onblur="cancelRenameSession('${session.id}')">
+                                <div style="margin-top: 5px;">
+                                    <button type="button" class="btn-small waves-effect waves-light green"
+                                            onclick="event.stopPropagation(); confirmRenameSession('${session.id}')"
+                                            style="margin-right: 5px;">
+                                        <i class="material-icons left">check</i>${t('save')}
+                                    </button>
+                                    <button type="button" class="btn-small waves-effect waves-light grey"
+                                            onclick="event.stopPropagation(); cancelRenameSession('${session.id}')">
+                                        <i class="material-icons left">close</i>${t('cancel')}
+                                    </button>
+                                </div>
+                            </div>
+                        </td>
                         <td>${created}</td>
                         <td>${modified}</td>
                         <td class="center-align">
@@ -1474,6 +1507,58 @@
             showDeleteConfirmation(sessionId);
         }
 
+        function startRenameSession(sessionId, currentName) {
+            document.getElementById(`session-name-display-${sessionId}`).style.display = 'none';
+            document.getElementById(`session-name-edit-${sessionId}`).style.display = 'block';
+
+            const input = document.getElementById(`session-name-input-${sessionId}`);
+            setTimeout(() => {
+                input.focus();
+                input.select();
+            }, 50);
+        }
+
+        function cancelRenameSession(sessionId) {
+            document.getElementById(`session-name-display-${sessionId}`).style.display = 'flex';
+            document.getElementById(`session-name-edit-${sessionId}`).style.display = 'none';
+        }
+
+        function confirmRenameSession(sessionId) {
+            const input = document.getElementById(`session-name-input-${sessionId}`);
+            const newName = input.value.trim();
+
+            if (!newName) {
+                M.toast({html: t('pleaseEnterSessionName'), displayLength: 2000});
+                return;
+            }
+
+            const sessions = getSessions();
+            const session = sessions.find(s => s.id === sessionId);
+
+            if (session) {
+                session.name = newName;
+                session.lastModified = new Date().toISOString();
+                saveSessions(sessions);
+
+                if (currentSessionId === sessionId) {
+                    document.getElementById('sessionTitle').textContent = newName;
+                }
+
+                renderSessionList();
+                M.toast({html: '<i class="material-icons left">edit</i>' + t('sessionRenamed'), displayLength: 2000});
+            }
+        }
+
+        function handleRenameKeydown(event, sessionId) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                confirmRenameSession(sessionId);
+            } else if (event.key === 'Escape') {
+                event.preventDefault();
+                cancelRenameSession(sessionId);
+            }
+        }
+
         function renderGlobalEventTypes() {
             const eventTypes = getEventTypes();
             const container = document.getElementById('globalEventTypesList');
@@ -1543,16 +1628,15 @@
                                 </label>
                                 <p style="font-size: 11px; color: #9e9e9e; margin: 5px 0 0 0;" data-i18n-html="createsVariant">${t('createsVariant')} "${t('no')} ${eventType.name}"</p>
                             </div>
-                            ${isComplementary ? `
-                            <div class="col s6 m2 l2">
+                            <div class="col s6 m2 l2" style="${isComplementary ? '' : 'visibility: hidden;'}">
                                 <label style="font-size: 12px; color: #9e9e9e; display: block; margin-bottom: 5px;" data-i18n="complementaryColor">${t('complementaryColor')}</label>
                                 <input type="color"
                                        value="${complementaryColor}"
                                        data-index="${index}"
                                        style="width: 100%; height: 32px; border: 1px solid #e0e0e0; border-radius: 4px; cursor: pointer; padding: 2px; box-sizing: border-box;"
-                                       onchange="updateGlobalEventTypeComplementaryColor(${index}, this.value)">
+                                       onchange="updateGlobalEventTypeComplementaryColor(${index}, this.value)"
+                                       ${isComplementary ? '' : 'disabled'}>
                             </div>
-                            ` : ''}
                             <div class="col s6 m1 l1" style="text-align: center;">
                                 <label style="font-size: 12px; color: transparent; display: block; margin-bottom: 5px;">.</label>
                                 <button class="btn-small waves-effect waves-light red"
@@ -2007,19 +2091,27 @@
             }
 
             const styles = [];
-            eventTypes.forEach(eventType => {
-                const eventNames = eventType.isComplementary
-                    ? [eventType.name, `${t('no')} ${eventType.name}`]
-                    : [eventType.name];
 
-                eventNames.forEach(eventName => {
-                    const eventClass = getEventTypeClass(eventName);
-                    const color = eventName.startsWith(`${t('no')} `)
-                        ? (eventType.complementaryColor || eventType.color)
-                        : eventType.color;
-                    styles.push(`.event-btn.${eventClass} { background: ${color}; }`);
-                });
-            });
+            // All buttons are grey by default
+            styles.push(`.event-btn { background: #9e9e9e !important; transition: all 0.3s ease; }`);
+
+            // Active buttons are orange and elevated
+            styles.push(`.event-btn.active {
+                background: #ff9800 !important;
+                box-shadow: 0 8px 16px rgba(0,0,0,0.3), 0 4px 8px rgba(0,0,0,0.2) !important;
+                transform: translateY(-2px);
+            }`);
+
+            // Hover effects
+            styles.push(`.event-btn:hover {
+                box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+                transform: translateY(-1px);
+            }`);
+
+            styles.push(`.event-btn.active:hover {
+                box-shadow: 0 10px 20px rgba(0,0,0,0.35), 0 6px 10px rgba(0,0,0,0.25) !important;
+                transform: translateY(-3px);
+            }`);
 
             styleElement.textContent = styles.join('\n');
         }
@@ -2920,7 +3012,7 @@
     </script>
 
     <!-- Materialize JavaScript -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <script src="materialize.min.js"></script>
 
     <script>
         // Initialize app after Materialize is loaded
