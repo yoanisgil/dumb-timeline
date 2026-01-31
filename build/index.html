@@ -1095,7 +1095,13 @@
                 minute: 'minute',
                 minutes: 'minutes',
                 hour: 'hour',
-                hours: 'hours'
+                hours: 'hours',
+                eventName: 'Event Name',
+                color: 'Color',
+                complementaryEvent: 'Complementary Event',
+                complementaryColor: 'Complementary Color',
+                createsVariant: 'Creates a mutually exclusive variant',
+                thisActionCannotBeUndone: 'This action cannot be undone.'
             },
             fr: {
                 sessions: 'Sessions',
@@ -1164,7 +1170,13 @@
                 minute: 'minute',
                 minutes: 'minutes',
                 hour: 'heure',
-                hours: 'heures'
+                hours: 'heures',
+                eventName: 'Nom de l\'Événement',
+                color: 'Couleur',
+                complementaryEvent: 'Événement Complémentaire',
+                complementaryColor: 'Couleur Complémentaire',
+                createsVariant: 'Crée une variante mutuellement exclusive',
+                thisActionCannotBeUndone: 'Cette action ne peut pas être annulée.'
             }
         };
 
@@ -1478,16 +1490,16 @@
                                 <div>
                                     <p style="margin: 0; font-weight: 500; color: #f44336;">
                                         <i class="material-icons" style="vertical-align: middle; font-size: 20px;">warning</i>
-                                        Delete "${eventType.name}"?
+                                        <span data-i18n="delete">${t('delete')}</span> "${eventType.name}"?
                                     </p>
-                                    <p style="margin: 5px 0 0 0; font-size: 14px; color: #666;">This action cannot be undone.</p>
+                                    <p style="margin: 5px 0 0 0; font-size: 14px; color: #666;" data-i18n="thisActionCannotBeUndone">${t('thisActionCannotBeUndone')}</p>
                                 </div>
                                 <div style="display: flex; gap: 10px;">
-                                    <button class="btn-small waves-effect waves-light grey" onclick="cancelDeleteEventType()" style="margin: 0;">
-                                        Cancel
+                                    <button class="btn-small waves-effect waves-light grey" onclick="cancelDeleteEventType()" style="margin: 0;" data-i18n="cancel">
+                                        ${t('cancel')}
                                     </button>
                                     <button class="btn-small waves-effect waves-light red" onclick="confirmDeleteEventType()" style="margin: 0;">
-                                        <i class="material-icons left">delete</i>Delete
+                                        <i class="material-icons left">delete</i><span data-i18n="delete">${t('delete')}</span>
                                     </button>
                                 </div>
                             </div>
@@ -1495,11 +1507,13 @@
                     `;
                 }
 
+                const complementaryColor = eventType.complementaryColor || eventType.color;
+
                 return `
                     <div class="card-panel" style="padding: 20px; margin-bottom: 15px;">
-                        <div class="row" style="margin-bottom: 0; display: flex; align-items: center;">
-                            <div class="col s12 m5 l4">
-                                <label style="font-size: 12px; color: #9e9e9e; display: block; margin-bottom: 5px;">Event Name</label>
+                        <div class="row" style="margin-bottom: 0; display: flex; align-items: center; flex-wrap: wrap;">
+                            <div class="col s12 m4 l3">
+                                <label style="font-size: 12px; color: #9e9e9e; display: block; margin-bottom: 5px;" data-i18n="eventName">${t('eventName')}</label>
                                 <input type="text"
                                        value="${eventType.name}"
                                        data-index="${index}"
@@ -1507,25 +1521,35 @@
                                        onchange="updateGlobalEventTypeName(${index}, this.value)">
                             </div>
                             <div class="col s6 m2 l2">
-                                <label style="font-size: 12px; color: #9e9e9e; display: block; margin-bottom: 5px;">Color</label>
+                                <label style="font-size: 12px; color: #9e9e9e; display: block; margin-bottom: 5px;" data-i18n="color">${t('color')}</label>
                                 <input type="color"
                                        value="${eventType.color}"
                                        data-index="${index}"
                                        style="width: 100%; height: 32px; border: 1px solid #e0e0e0; border-radius: 4px; cursor: pointer; padding: 2px; box-sizing: border-box;"
                                        onchange="updateGlobalEventTypeColor(${index}, this.value)">
                             </div>
-                            <div class="col s12 m4 l4">
+                            <div class="col s12 m5 l4">
                                 <label style="font-size: 12px; color: #9e9e9e; display: block; margin-bottom: 5px;">
                                     <input type="checkbox"
                                            class="filled-in"
                                            id="complementary-${index}"
                                            ${isComplementary ? 'checked' : ''}
                                            onchange="updateGlobalEventTypeComplementary(${index}, this.checked)">
-                                    <span>Complementary Event</span>
+                                    <span data-i18n="complementaryEvent">${t('complementaryEvent')}</span>
                                 </label>
-                                <p style="font-size: 11px; color: #9e9e9e; margin: 5px 0 0 0;">Creates a mutually exclusive "${t('no')} ${eventType.name}" variant</p>
+                                <p style="font-size: 11px; color: #9e9e9e; margin: 5px 0 0 0;" data-i18n-html="createsVariant">${t('createsVariant')} "${t('no')} ${eventType.name}"</p>
                             </div>
-                            <div class="col s6 m1 l2" style="text-align: center;">
+                            ${isComplementary ? `
+                            <div class="col s6 m2 l2">
+                                <label style="font-size: 12px; color: #9e9e9e; display: block; margin-bottom: 5px;" data-i18n="complementaryColor">${t('complementaryColor')}</label>
+                                <input type="color"
+                                       value="${complementaryColor}"
+                                       data-index="${index}"
+                                       style="width: 100%; height: 32px; border: 1px solid #e0e0e0; border-radius: 4px; cursor: pointer; padding: 2px; box-sizing: border-box;"
+                                       onchange="updateGlobalEventTypeComplementaryColor(${index}, this.value)">
+                            </div>
+                            ` : ''}
+                            <div class="col s6 m1 l1" style="text-align: center;">
                                 <label style="font-size: 12px; color: transparent; display: block; margin-bottom: 5px;">.</label>
                                 <button class="btn-small waves-effect waves-light red"
                                         onclick="showDeleteEventTypeConfirmation(${index})"
@@ -1570,10 +1594,27 @@
             const eventTypes = getEventTypes();
             if (eventTypes[index]) {
                 eventTypes[index].isComplementary = isChecked;
+                if (!isChecked) {
+                    delete eventTypes[index].complementaryColor;
+                }
                 saveEventTypesToStorage(eventTypes);
                 renderGlobalEventTypes();
                 if (currentSessionId) {
                     renderEventButtons();
+                    updateDynamicStyles(eventTypes);
+                }
+            }
+        }
+
+        function updateGlobalEventTypeComplementaryColor(index, color) {
+            const eventTypes = getEventTypes();
+            if (eventTypes[index]) {
+                eventTypes[index].complementaryColor = color;
+                saveEventTypesToStorage(eventTypes);
+                renderGlobalEventTypes();
+                if (currentSessionId) {
+                    renderEventButtons();
+                    updateDynamicStyles(eventTypes);
                 }
             }
         }
@@ -1738,13 +1779,8 @@
         }
 
         function getEvents() {
-            if (!currentSessionId) {
-                console.log('getEvents: No current session ID');
-                return [];
-            }
-            const key = getSessionStorageKey('events');
-            const stored = localStorage.getItem(key);
-            console.log('getEvents: key =', key, 'stored =', stored);
+            if (!currentSessionId) return [];
+            const stored = localStorage.getItem(getSessionStorageKey('events'));
             return stored ? JSON.parse(stored) : [];
         }
 
@@ -1834,12 +1870,8 @@
         }
 
         function loadTimelineSettings() {
-            console.log('=== loadTimelineSettings called ===');
             const settings = getSettings();
             const events = getEvents();
-
-            console.log('Settings:', settings);
-            console.log('Events for timeline:', events);
 
             let startDate = settings.timelineDate;
             let endDate = settings.timelineEndDate;
@@ -1851,12 +1883,8 @@
                 const minDate = new Date(Math.min(...eventDates));
                 const maxDate = new Date(Math.max(...eventDates));
 
-                console.log('Event date range:', minDate, 'to', maxDate);
-
                 startDate = minDate.toISOString().split('T')[0];
                 endDate = maxDate.toISOString().split('T')[0];
-
-                console.log('Setting startDate:', startDate, 'endDate:', endDate);
 
                 if (minDate.toDateString() !== maxDate.toDateString()) {
                     viewMode = 'range';
@@ -1871,11 +1899,8 @@
                     displayText = `(${startDateObj.toLocaleDateString()} - ${endDateObj.toLocaleDateString()})`;
                 }
             } else {
-                console.log('No events found');
                 displayText = '(No events)';
             }
-
-            console.log('Final settings - viewMode:', viewMode, 'startDate:', startDate, 'endDate:', endDate);
 
             document.getElementById('timelineDate').value = startDate;
             document.getElementById('timelineView').value = viewMode;
@@ -1985,7 +2010,10 @@
 
                 eventNames.forEach(eventName => {
                     const eventClass = getEventTypeClass(eventName);
-                    styles.push(`.event-btn.${eventClass} { background: ${eventType.color}; }`);
+                    const color = eventName.startsWith(`${t('no')} `)
+                        ? (eventType.complementaryColor || eventType.color)
+                        : eventType.color;
+                    styles.push(`.event-btn.${eventClass} { background: ${color}; }`);
                 });
             });
 
@@ -2037,16 +2065,16 @@
                                     <div>
                                         <p style="margin: 0; font-weight: 500; color: #f44336;">
                                             <i class="material-icons" style="vertical-align: middle; font-size: 20px;">warning</i>
-                                            Delete this event?
+                                            <span data-i18n="delete">${t('delete')}</span> this event?
                                         </p>
-                                        <p style="margin: 5px 0 0 0; font-size: 14px; color: #666;">This action cannot be undone.</p>
+                                        <p style="margin: 5px 0 0 0; font-size: 14px; color: #666;" data-i18n="thisActionCannotBeUndone">${t('thisActionCannotBeUndone')}</p>
                                     </div>
                                     <div style="display: flex; gap: 10px;">
-                                        <button class="btn-small waves-effect waves-light grey" onclick="cancelDeleteEvent()">
-                                            Cancel
+                                        <button class="btn-small waves-effect waves-light grey" onclick="cancelDeleteEvent()" data-i18n="cancel">
+                                            ${t('cancel')}
                                         </button>
                                         <button class="btn-small waves-effect waves-light red" onclick="confirmDeleteEvent()">
-                                            <i class="material-icons left">delete</i>Delete
+                                            <i class="material-icons left">delete</i><span data-i18n="delete">${t('delete')}</span>
                                         </button>
                                     </div>
                                 </div>
@@ -2166,7 +2194,7 @@
         let deleteEventId = null;
 
         function showDeleteEventConfirmation(eventId) {
-            deleteEventId = eventId;
+            deleteEventId = Number(eventId);
             displayEvents();
         }
 
@@ -2225,9 +2253,10 @@
             eventTypes.forEach(eventType => {
                 colors[eventType.name] = eventType.color;
                 if (eventType.isComplementary) {
-                    colors[`${t('no')} ${eventType.name}`] = eventType.color;
-                    colors[`No ${eventType.name}`] = eventType.color;
-                    colors[`Sans ${eventType.name}`] = eventType.color;
+                    const compColor = eventType.complementaryColor || eventType.color;
+                    colors[`${t('no')} ${eventType.name}`] = compColor;
+                    colors[`No ${eventType.name}`] = compColor;
+                    colors[`Sans ${eventType.name}`] = compColor;
                 }
             });
             return colors;
@@ -2238,11 +2267,8 @@
         }
 
         function generateTimeline() {
-            console.log('=== generateTimeline called ===');
             const events = getEvents();
             const activeEvents = getActiveEvents();
-            console.log('Events:', events);
-            console.log('Active events:', activeEvents);
 
             const allEvents = [...events];
             activeEvents.forEach(active => {
@@ -2265,10 +2291,6 @@
             const viewType = document.getElementById('timelineView').value;
             const dateInput = document.getElementById('timelineDate');
             const endDateInput = document.getElementById('timelineEndDate');
-
-            console.log('View type:', viewType);
-            console.log('Date input value:', dateInput.value);
-            console.log('End date input value:', endDateInput.value);
 
             const canvas = document.getElementById('timelineCanvas');
             const ctx = canvas.getContext('2d');
@@ -2317,11 +2339,8 @@
                 const dayEnd = new Date(selectedDate);
                 dayEnd.setHours(23, 59, 59, 999);
 
-                console.log('Day view - filtering from', dayStart, 'to', dayEnd);
-
                 filteredEvents = allEvents.filter(e => {
                     const eventTime = new Date(e.startTime || e.timestamp);
-                    console.log('Event time:', eventTime, 'in range?', eventTime >= dayStart && eventTime <= dayEnd);
                     return eventTime >= dayStart && eventTime <= dayEnd;
                 });
             } else {
@@ -2332,19 +2351,13 @@
                 const rangeEnd = new Date(endDate);
                 rangeEnd.setHours(23, 59, 59, 999);
 
-                console.log('Range view - filtering from', rangeStart, 'to', rangeEnd);
-
                 filteredEvents = allEvents.filter(e => {
                     const eventTime = new Date(e.startTime || e.timestamp);
-                    console.log('Event time:', eventTime, 'in range?', eventTime >= rangeStart && eventTime <= rangeEnd);
                     return eventTime >= rangeStart && eventTime <= rangeEnd;
                 });
             }
 
-            console.log('Filtered events:', filteredEvents);
-
             if (filteredEvents.length === 0) {
-                console.log('No filtered events - showing message on canvas');
                 ctx.fillStyle = '#999';
                 ctx.font = '16px sans-serif';
                 ctx.textAlign = 'center';
