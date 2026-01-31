@@ -1,0 +1,1558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .available-events-panel {
+            background: #f8f9fa;
+            border: 2px solid #6c757d;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .available-events-panel h2 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .event-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+        }
+
+        .event-btn {
+            padding: 20px;
+            font-size: 16px;
+            font-weight: 600;
+            border: 3px solid transparent;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            position: relative;
+            min-height: 100px;
+        }
+
+        .event-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .event-btn:active {
+            transform: translateY(0);
+        }
+
+        .event-btn.meeting { background: #3b82f6; }
+        .event-btn.break { background: #10b981; }
+        .event-btn.task { background: #f59e0b; }
+        .event-btn.phone { background: #ef4444; }
+        .event-btn.email { background: #8b5cf6; }
+        .event-btn.other { background: #ec4899; }
+
+        .event-btn.active {
+            border-color: #fff;
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3), 0 6px 12px rgba(0, 0, 0, 0.2);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3), 0 6px 12px rgba(0, 0, 0, 0.2);
+            }
+            50% {
+                box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.5), 0 8px 16px rgba(0, 0, 0, 0.3);
+            }
+        }
+
+        .event-btn-label {
+            font-size: 16px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .event-btn-status {
+            font-size: 12px;
+            font-weight: 500;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .event-btn-duration {
+            font-size: 14px;
+            font-weight: 600;
+            font-family: 'Courier New', monospace;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 4px 12px;
+            border-radius: 12px;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .event-btn-instances {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            color: white;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 10px;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .clear-btn {
+            padding: 10px 20px;
+            background: #dc2626;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s ease;
+        }
+
+        .clear-btn:hover {
+            background: #b91c1c;
+        }
+
+        .csv-btn {
+            padding: 10px 20px;
+            background: #0891b2;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s ease;
+        }
+
+        .csv-btn:hover {
+            background: #0e7490;
+        }
+
+        .reset-btn {
+            padding: 10px 20px;
+            background: #f97316;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s ease;
+        }
+
+        .reset-btn:hover {
+            background: #ea580c;
+        }
+
+        .events-list {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            padding: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .events-list h2 {
+            color: #856404;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .event-item {
+            background: white;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            border-left: 4px solid;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .event-item.running {
+            background: #e7f5ff;
+        }
+
+        .event-type {
+            font-weight: 600;
+            color: #333;
+            flex: 1;
+        }
+
+        .event-time {
+            color: #666;
+            font-size: 13px;
+            text-align: right;
+        }
+
+        .event-duration {
+            color: #28a745;
+            font-weight: 600;
+            font-size: 13px;
+            margin-left: 10px;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #999;
+            padding: 40px 20px;
+            font-style: italic;
+        }
+
+        .event-types-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .event-type-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+            flex-wrap: wrap;
+        }
+
+        .event-type-item input[type="text"] {
+            flex: 1;
+            min-width: 150px;
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .event-type-item input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .event-type-item input[type="color"] {
+            width: 60px;
+            height: 40px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            background: white;
+        }
+
+        .event-type-item select {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+            min-width: 150px;
+        }
+
+        .event-type-item select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .complementary-label {
+            font-size: 12px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .event-type-item input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 2px;
+        }
+
+        .event-type-item input[type="color"]::-webkit-color-swatch {
+            border: none;
+            border-radius: 4px;
+        }
+
+        .delete-event-btn {
+            padding: 8px 12px;
+            background: #dc2626;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.3s ease;
+        }
+
+        .delete-event-btn:hover {
+            background: #b91c1c;
+        }
+
+        .add-event-btn {
+            padding: 10px 20px;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .add-event-btn:hover {
+            background: #059669;
+        }
+
+        .save-settings-btn {
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: background 0.3s ease;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .save-settings-btn:hover {
+            background: #5568d3;
+        }
+
+        .settings-section h3 {
+            color: #333;
+            margin-bottom: 10px;
+            margin-top: 20px;
+            font-size: 16px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 8px;
+        }
+
+        .settings-section h3:first-of-type {
+            margin-top: 0;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #10b981;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .timeline-btn {
+            padding: 10px 20px;
+            background: #7c3aed;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s ease;
+        }
+
+        .timeline-btn:hover {
+            background: #6d28d9;
+        }
+
+        .timeline-section {
+            background: #f9fafb;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .timeline-section.show {
+            display: block;
+        }
+
+        .timeline-section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .timeline-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .timeline-controls label {
+            color: #666;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .timeline-controls input,
+        .timeline-controls select {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .download-timeline-btn {
+            padding: 8px 16px;
+            background: #059669;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s ease;
+            margin-left: auto;
+        }
+
+        .download-timeline-btn:hover {
+            background: #047857;
+        }
+
+        #timelineCanvas {
+            width: 100%;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            background: white;
+            cursor: crosshair;
+        }
+
+        .timeline-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 6px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        .legend-label {
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 15px;
+            color: #666;
+            transition: all 0.3s ease;
+        }
+
+        .tab:hover {
+            color: #333;
+            background: #f9fafb;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .settings-section {
+            background: #f9fafb;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .settings-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+
+        .setting-item {
+            background: white;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .setting-item h3 {
+            color: #333;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+
+        .setting-item p {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+
+        .setting-item select {
+            padding: 10px 15px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            width: 100%;
+            max-width: 300px;
+            cursor: pointer;
+        }
+
+        .setting-item select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Event Tracker</h1>
+        <p class="subtitle">Start and stop events to track your activities</p>
+
+        <div class="controls">
+            <button class="csv-btn" onclick="exportCSV()">Export to CSV</button>
+            <button class="timeline-btn" onclick="toggleTimeline()">View Timeline</button>
+            <button class="reset-btn" onclick="resetEvents()">Reset Events</button>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('events')">Events</button>
+            <button class="tab" onclick="switchTab('timeline')">Timeline</button>
+            <button class="tab" onclick="switchTab('settings')">Settings</button>
+        </div>
+
+        <div id="eventsTab" class="tab-content active">
+            <div class="available-events-panel">
+                <h2>📊 Event Tracker - Click to Start/Stop</h2>
+                <div class="event-buttons" id="eventButtons">
+                </div>
+            </div>
+
+            <div class="events-list">
+                <h2>📜 Event History</h2>
+                <div id="eventsList"></div>
+            </div>
+        </div>
+
+        <div id="timelineTab" class="tab-content">
+            <div class="timeline-section show">
+                <h2>Activity Timeline</h2>
+                <div class="timeline-controls">
+                    <label for="timelineDate">Date:</label>
+                    <input type="date" id="timelineDate" onchange="saveTimelineSettings(); generateTimeline()">
+
+                    <label for="timelineView">View:</label>
+                    <select id="timelineView" onchange="saveTimelineSettings(); generateTimeline()">
+                        <option value="day">Day View (24 hours)</option>
+                        <option value="range">Date Range</option>
+                    </select>
+
+                    <input type="date" id="timelineEndDate" style="display: none;" onchange="saveTimelineSettings(); generateTimeline()">
+
+                    <button class="download-timeline-btn" onclick="downloadTimeline()">Download Image</button>
+                </div>
+                <canvas id="timelineCanvas"></canvas>
+                <div class="timeline-legend" id="timelineLegend"></div>
+            </div>
+        </div>
+
+        <div id="settingsTab" class="tab-content">
+            <div class="settings-section">
+                <h2>Settings</h2>
+
+                <h3>Event Types</h3>
+                <p>Customize your event types and colors. Changes will be applied after saving.</p>
+                <div class="event-types-list" id="eventTypesList"></div>
+                <button class="add-event-btn" onclick="addEventTypeRow()">➕ Add Event Type</button>
+                <button class="save-settings-btn" onclick="saveEventTypes()">💾 Save Event Types</button>
+
+                <h3>Timeline Scale</h3>
+                <p>Adjust how time is displayed in the timeline visualization. This compresses or expands the time axis.</p>
+                <div class="setting-item">
+                    <select id="timeScaleSetting" onchange="saveTimeScale()">
+                        <option value="1">1:1 (Real-time - 1 second = 1 second)</option>
+                        <option value="60">1:60 (1 minute = 1 second)</option>
+                        <option value="120">1:120 (2 minutes = 1 second)</option>
+                        <option value="300">1:300 (5 minutes = 1 second)</option>
+                        <option value="600">1:600 (10 minutes = 1 second)</option>
+                        <option value="1800">1:1800 (30 minutes = 1 second)</option>
+                        <option value="3600">1:3600 (1 hour = 1 second)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        const STORAGE_KEY = 'eventTrackerData';
+        const ACTIVE_EVENTS_KEY = 'activeEvents';
+        const SETTINGS_KEY = 'eventTrackerSettings';
+        const EVENT_TYPES_KEY = 'eventTypes';
+        let updateInterval;
+
+        const DEFAULT_EVENT_TYPES = [];
+
+        function getComplementaryEvent(eventTypeName) {
+            const eventTypes = getEventTypes();
+            const eventType = eventTypes.find(e => e.name === eventTypeName);
+            return eventType?.complementary || null;
+        }
+
+        function toggleEvent(eventType) {
+            let activeEvents = getActiveEvents();
+            const activeEvent = activeEvents.find(e => e.type === eventType);
+
+            if (activeEvent) {
+                stopEvent(activeEvent.id);
+            } else {
+                startEvent(eventType);
+            }
+        }
+
+        function startEvent(eventType) {
+            let activeEvents = getActiveEvents();
+
+            const complementaryEventName = getComplementaryEvent(eventType);
+            if (complementaryEventName) {
+                const complementaryActiveEvents = activeEvents.filter(e => e.type === complementaryEventName);
+                complementaryActiveEvents.forEach(e => {
+                    stopEvent(e.id, true);
+                });
+                activeEvents = getActiveEvents();
+            }
+
+            const event = {
+                id: Date.now() + Math.random(),
+                type: eventType,
+                startTime: new Date().toISOString(),
+                endTime: null
+            };
+
+            activeEvents.push(event);
+            localStorage.setItem(ACTIVE_EVENTS_KEY, JSON.stringify(activeEvents));
+
+            renderEventButtons();
+            const complementaryMsg = complementaryEventName ? ` (stopped ${complementaryEventName})` : '';
+            showToast(`${eventType} started!${complementaryMsg}`);
+            startUpdateInterval();
+        }
+
+        function stopEvent(eventId, silent = false) {
+            let activeEvents = getActiveEvents();
+            const eventIndex = activeEvents.findIndex(e => e.id === eventId);
+
+            if (eventIndex !== -1) {
+                const event = activeEvents[eventIndex];
+                event.endTime = new Date().toISOString();
+
+                const startTime = new Date(event.startTime);
+                const endTime = new Date(event.endTime);
+                event.duration = Math.floor((endTime - startTime) / 1000);
+
+                let events = getEvents();
+                events.push(event);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+
+                activeEvents.splice(eventIndex, 1);
+                localStorage.setItem(ACTIVE_EVENTS_KEY, JSON.stringify(activeEvents));
+
+                if (!silent) {
+                    renderEventButtons();
+                    displayEvents();
+                    showToast(`${event.type} stopped! Duration: ${formatDuration(event.duration)}`);
+                }
+
+                if (activeEvents.length === 0) {
+                    stopUpdateInterval();
+                }
+            }
+        }
+
+        function getEvents() {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            return stored ? JSON.parse(stored) : [];
+        }
+
+        function getActiveEvents() {
+            const stored = localStorage.getItem(ACTIVE_EVENTS_KEY);
+            return stored ? JSON.parse(stored) : [];
+        }
+
+        function formatDuration(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+
+            if (hours > 0) {
+                return `${hours}h ${minutes}m ${secs}s`;
+            } else if (minutes > 0) {
+                return `${minutes}m ${secs}s`;
+            } else {
+                return `${secs}s`;
+            }
+        }
+
+        function calculateDuration(startTime) {
+            const start = new Date(startTime);
+            const now = new Date();
+            return Math.floor((now - start) / 1000);
+        }
+
+        function getEventTypes() {
+            const stored = localStorage.getItem(EVENT_TYPES_KEY);
+            return stored ? JSON.parse(stored) : DEFAULT_EVENT_TYPES;
+        }
+
+        function saveEventTypesToStorage(eventTypes) {
+            localStorage.setItem(EVENT_TYPES_KEY, JSON.stringify(eventTypes));
+        }
+
+        function getSettings() {
+            const stored = localStorage.getItem(SETTINGS_KEY);
+            return stored ? JSON.parse(stored) : {
+                timeScale: 1,
+                timelineDate: new Date().toISOString().split('T')[0],
+                timelineView: 'day',
+                timelineEndDate: new Date().toISOString().split('T')[0]
+            };
+        }
+
+        function saveTimeScale() {
+            const timeScale = parseInt(document.getElementById('timeScaleSetting').value);
+            const settings = getSettings();
+            settings.timeScale = timeScale;
+            localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+            showToast('Time scale updated!');
+
+            const timelineTab = document.getElementById('timelineTab');
+            if (timelineTab.classList.contains('active')) {
+                generateTimeline();
+            }
+        }
+
+        function saveTimelineSettings() {
+            const settings = getSettings();
+            settings.timelineDate = document.getElementById('timelineDate').value;
+            settings.timelineView = document.getElementById('timelineView').value;
+            settings.timelineEndDate = document.getElementById('timelineEndDate').value;
+            localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+        }
+
+        function loadTimelineSettings() {
+            const settings = getSettings();
+            document.getElementById('timelineDate').value = settings.timelineDate;
+            document.getElementById('timelineView').value = settings.timelineView;
+            document.getElementById('timelineEndDate').value = settings.timelineEndDate;
+
+            if (settings.timelineView === 'range') {
+                document.getElementById('timelineEndDate').style.display = 'inline-block';
+            } else {
+                document.getElementById('timelineEndDate').style.display = 'none';
+            }
+        }
+
+        function switchTab(tabName) {
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach(tab => tab.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById(tabName + 'Tab').classList.add('active');
+
+            if (tabName === 'timeline') {
+                loadTimelineSettings();
+                generateTimeline();
+            } else if (tabName === 'settings') {
+                loadSettings();
+            }
+        }
+
+        function loadSettings() {
+            const settings = getSettings();
+            document.getElementById('timeScaleSetting').value = settings.timeScale;
+            renderEventTypesList();
+        }
+
+        function renderEventTypesList() {
+            const eventTypes = getEventTypes();
+            const container = document.getElementById('eventTypesList');
+
+            if (eventTypes.length === 0) {
+                container.innerHTML = '<div class="empty-state">No event types yet. Click "Add Event Type" below to get started.</div>';
+                return;
+            }
+
+            container.innerHTML = eventTypes.map((eventType, index) => {
+                const complementaryOptions = eventTypes
+                    .filter((_, i) => i !== index)
+                    .map(et => `<option value="${et.name}" ${eventType.complementary === et.name ? 'selected' : ''}>${et.name}</option>`)
+                    .join('');
+
+                return `
+                    <div class="event-type-item">
+                        <input type="text"
+                               value="${eventType.name}"
+                               placeholder="Event name"
+                               data-index="${index}"
+                               onchange="updateEventTypeName(${index}, this.value)">
+                        <input type="color"
+                               value="${eventType.color}"
+                               data-index="${index}"
+                               onchange="updateEventTypeColor(${index}, this.value)">
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <label class="complementary-label">Complementary:</label>
+                            <select onchange="updateEventTypeComplementary(${index}, this.value)">
+                                <option value="">None</option>
+                                ${complementaryOptions}
+                            </select>
+                        </div>
+                        <button class="delete-event-btn" onclick="deleteEventType(${index})">🗑️ Delete</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateEventTypeName(index, newName) {
+            const eventTypes = getEventTypes();
+            if (eventTypes[index]) {
+                const oldName = eventTypes[index].name;
+                eventTypes[index].name = newName;
+
+                eventTypes.forEach(et => {
+                    if (et.complementary === oldName) {
+                        et.complementary = newName;
+                    }
+                });
+
+                saveEventTypesToStorage(eventTypes);
+                renderEventTypesList();
+            }
+        }
+
+        function updateEventTypeColor(index, newColor) {
+            const eventTypes = getEventTypes();
+            if (eventTypes[index]) {
+                eventTypes[index].color = newColor;
+                saveEventTypesToStorage(eventTypes);
+            }
+        }
+
+        function updateEventTypeComplementary(index, complementaryName) {
+            const eventTypes = getEventTypes();
+            if (eventTypes[index]) {
+                eventTypes[index].complementary = complementaryName || null;
+
+                if (complementaryName) {
+                    const complementaryIndex = eventTypes.findIndex(e => e.name === complementaryName);
+                    if (complementaryIndex !== -1) {
+                        eventTypes[complementaryIndex].complementary = eventTypes[index].name;
+                    }
+                }
+
+                saveEventTypesToStorage(eventTypes);
+                renderEventTypesList();
+            }
+        }
+
+        function addEventTypeRow() {
+            const eventTypes = getEventTypes();
+            eventTypes.push({ name: 'New Event', color: '#999999', complementary: null });
+            saveEventTypesToStorage(eventTypes);
+            renderEventTypesList();
+        }
+
+        function deleteEventType(index) {
+            const eventTypes = getEventTypes();
+            const eventType = eventTypes[index];
+
+            const activeEvents = getActiveEvents();
+            const hasActiveEvents = activeEvents.some(e => e.type === eventType.name);
+
+            if (hasActiveEvents) {
+                showToast('Cannot delete event type with active events. Stop them first.');
+                return;
+            }
+
+            if (confirm(`Delete "${eventType.name}"? This cannot be undone.`)) {
+                eventTypes.forEach(et => {
+                    if (et.complementary === eventType.name) {
+                        et.complementary = null;
+                    }
+                });
+
+                eventTypes.splice(index, 1);
+                saveEventTypesToStorage(eventTypes);
+                renderEventTypesList();
+            }
+        }
+
+        function saveEventTypes() {
+            const eventTypes = getEventTypes();
+
+            const names = eventTypes.map(e => e.name.trim());
+            const uniqueNames = new Set(names);
+
+            if (names.some(name => !name)) {
+                showToast('All event types must have a name!');
+                return;
+            }
+
+            if (names.length !== uniqueNames.size) {
+                showToast('Event type names must be unique!');
+                return;
+            }
+
+            saveEventTypesToStorage(eventTypes);
+            renderEventButtons();
+            displayEvents();
+            showToast('Event types saved successfully!');
+        }
+
+        function getEventTypeClass(name) {
+            return name.toLowerCase().replace(/\s+/g, '-');
+        }
+
+        function renderEventButtons() {
+            const activeEvents = getActiveEvents();
+            const eventTypes = getEventTypes();
+            const container = document.getElementById('eventButtons');
+
+            if (eventTypes.length === 0) {
+                container.innerHTML = '<div class="empty-state">No event types defined. Go to Settings to add event types.</div>';
+                return;
+            }
+
+            updateDynamicStyles(eventTypes);
+
+            container.innerHTML = eventTypes.map(eventType => {
+                const activeInstances = activeEvents.filter(e => e.type === eventType.name);
+                const isActive = activeInstances.length > 0;
+                const instanceCount = activeInstances.length;
+                const eventClass = getEventTypeClass(eventType.name);
+
+                let durationDisplay = '';
+                let statusDisplay = 'Click to Start';
+                let icon = '▶️';
+
+                if (isActive) {
+                    const oldestEvent = activeInstances[0];
+                    const duration = calculateDuration(oldestEvent.startTime);
+                    durationDisplay = `<div class="event-btn-duration" id="btn-duration-${eventClass}">${formatDuration(duration)}</div>`;
+                    statusDisplay = 'Running';
+                    icon = '⏹️';
+                }
+
+                const instanceBadge = instanceCount > 1 ? `<div class="event-btn-instances">${instanceCount}</div>` : '';
+
+                return `
+                    <button class="event-btn ${eventClass} ${isActive ? 'active' : ''}"
+                            onclick="toggleEvent('${eventType.name}')">
+                        ${instanceBadge}
+                        <div class="event-btn-label">${icon} ${eventType.name}</div>
+                        <div class="event-btn-status">${statusDisplay}</div>
+                        ${durationDisplay}
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function updateDynamicStyles(eventTypes) {
+            let styleElement = document.getElementById('dynamic-event-styles');
+            if (!styleElement) {
+                styleElement = document.createElement('style');
+                styleElement.id = 'dynamic-event-styles';
+                document.head.appendChild(styleElement);
+            }
+
+            const styles = eventTypes.map(eventType => {
+                const eventClass = getEventTypeClass(eventType.name);
+                return `.event-btn.${eventClass} { background: ${eventType.color}; }`;
+            }).join('\n');
+
+            styleElement.textContent = styles;
+        }
+
+        function displayEvents() {
+            const events = getEvents();
+            const activeEvents = getActiveEvents();
+            const listContainer = document.getElementById('eventsList');
+
+            const allEvents = [...events];
+
+            activeEvents.forEach(active => {
+                allEvents.push({
+                    ...active,
+                    isActive: true
+                });
+            });
+
+            if (allEvents.length === 0) {
+                listContainer.innerHTML = '<div class="empty-state">No events yet. Start tracking above!</div>';
+                return;
+            }
+
+            const sortedEvents = allEvents.sort((a, b) => {
+                const timeA = new Date(a.startTime || a.timestamp);
+                const timeB = new Date(b.startTime || b.timestamp);
+                return timeB - timeA;
+            });
+
+            const eventColors = getEventColors();
+            listContainer.innerHTML = sortedEvents.map(event => {
+                const color = eventColors[event.type] || '#999';
+                let timeInfo, durationInfo = '';
+
+                if (event.isActive) {
+                    const startTime = new Date(event.startTime).toLocaleString();
+                    timeInfo = `${startTime} - RUNNING`;
+                    const duration = calculateDuration(event.startTime);
+                    durationInfo = `<span class="event-duration">(${formatDuration(duration)})</span>`;
+                } else if (event.endTime) {
+                    const startTime = new Date(event.startTime).toLocaleString();
+                    const endTime = new Date(event.endTime).toLocaleString();
+                    timeInfo = `${startTime} - ${endTime}`;
+                    durationInfo = `<span class="event-duration">(${formatDuration(event.duration)})</span>`;
+                } else {
+                    timeInfo = event.displayTime || new Date(event.timestamp).toLocaleString();
+                }
+
+                return `
+                    <div class="event-item ${event.isActive ? 'running' : ''}" style="border-left-color: ${color}">
+                        <span class="event-type">${event.type}</span>
+                        <span class="event-time">${timeInfo} ${durationInfo}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function startUpdateInterval() {
+            if (updateInterval) return;
+
+            updateInterval = setInterval(() => {
+                const activeEvents = getActiveEvents();
+                if (activeEvents.length === 0) {
+                    stopUpdateInterval();
+                    return;
+                }
+
+                const eventTypes = getEventTypes();
+                eventTypes.forEach(eventType => {
+                    const activeInstances = activeEvents.filter(e => e.type === eventType.name);
+                    if (activeInstances.length > 0) {
+                        const oldestEvent = activeInstances[0];
+                        const duration = calculateDuration(oldestEvent.startTime);
+                        const eventClass = getEventTypeClass(eventType.name);
+                        const durationElement = document.getElementById(`btn-duration-${eventClass}`);
+                        if (durationElement) {
+                            durationElement.textContent = formatDuration(duration);
+                        }
+                    }
+                });
+
+                displayEvents();
+            }, 1000);
+        }
+
+        function stopUpdateInterval() {
+            if (updateInterval) {
+                clearInterval(updateInterval);
+                updateInterval = null;
+            }
+        }
+
+        function exportCSV() {
+            const events = getEvents();
+            const activeEvents = getActiveEvents();
+
+            if (events.length === 0 && activeEvents.length === 0) {
+                showToast('No events to export!');
+                return;
+            }
+
+            const allEvents = [...events];
+            activeEvents.forEach(active => {
+                allEvents.push({
+                    ...active,
+                    endTime: new Date().toISOString(),
+                    duration: calculateDuration(active.startTime),
+                    isActive: true
+                });
+            });
+
+            const sortedEvents = allEvents.sort((a, b) => {
+                const timeA = new Date(a.startTime || a.timestamp);
+                const timeB = new Date(b.startTime || b.timestamp);
+                return timeA - timeB;
+            });
+
+            let csvContent = 'Event Type,Start Time,End Time,Duration (seconds),Status\n';
+
+            sortedEvents.forEach(event => {
+                const escapedType = `"${event.type.replace(/"/g, '""')}"`;
+                const startTime = event.startTime || event.timestamp;
+                const endTime = event.endTime || '';
+                const duration = event.duration || 0;
+                const status = event.isActive ? 'RUNNING' : 'COMPLETED';
+                csvContent += `${escapedType},${startTime},${endTime},${duration},${status}\n`;
+            });
+
+            const dataBlob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `events_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+            URL.revokeObjectURL(url);
+
+            showToast('Events exported to CSV!');
+        }
+
+        function resetEvents() {
+            if (confirm('Are you sure you want to reset all events? This will stop all active events and clear all data. This cannot be undone.')) {
+                localStorage.removeItem(STORAGE_KEY);
+                localStorage.removeItem(ACTIVE_EVENTS_KEY);
+                stopUpdateInterval();
+                renderEventButtons();
+                displayEvents();
+                clearTimeline();
+                showToast('All events have been reset!');
+            }
+        }
+
+        function clearTimeline() {
+            const canvas = document.getElementById('timelineCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const legend = document.getElementById('timelineLegend');
+            legend.innerHTML = '';
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+
+        function getEventColors() {
+            const eventTypes = getEventTypes();
+            const colors = {};
+            eventTypes.forEach(eventType => {
+                colors[eventType.name] = eventType.color;
+            });
+            return colors;
+        }
+
+        function toggleTimeline() {
+            switchTab('timeline');
+        }
+
+        function generateTimeline() {
+            const events = getEvents();
+            const activeEvents = getActiveEvents();
+
+            const allEvents = [...events];
+            activeEvents.forEach(active => {
+                allEvents.push({
+                    ...active,
+                    endTime: new Date().toISOString(),
+                    duration: calculateDuration(active.startTime),
+                    isActive: true
+                });
+            });
+
+            if (allEvents.length === 0) {
+                showToast('No events to display in timeline!');
+                return;
+            }
+
+            const viewType = document.getElementById('timelineView').value;
+            const dateInput = document.getElementById('timelineDate');
+            const endDateInput = document.getElementById('timelineEndDate');
+
+            if (viewType === 'range') {
+                endDateInput.style.display = 'inline-block';
+                if (!endDateInput.value) {
+                    endDateInput.value = new Date().toISOString().split('T')[0];
+                }
+            } else {
+                endDateInput.style.display = 'none';
+            }
+
+            const canvas = document.getElementById('timelineCanvas');
+            const ctx = canvas.getContext('2d');
+
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = 650 * dpr;
+            canvas.style.width = rect.width + 'px';
+            canvas.style.height = '650px';
+            ctx.scale(dpr, dpr);
+
+            const width = rect.width;
+            const height = 650;
+            const headerHeight = 50;
+            const padding = 60;
+            const chartHeight = height - padding * 2 - headerHeight;
+
+            ctx.clearRect(0, 0, width, height);
+
+            let filteredEvents;
+            let startTime, endTime;
+
+            if (viewType === 'day') {
+                const selectedDate = new Date(dateInput.value);
+                const dayStart = new Date(selectedDate.setHours(0, 0, 0, 0));
+                const dayEnd = new Date(selectedDate.setHours(23, 59, 59, 999));
+
+                filteredEvents = allEvents.filter(e => {
+                    const eventTime = new Date(e.startTime || e.timestamp);
+                    return eventTime >= dayStart && eventTime <= dayEnd;
+                });
+            } else {
+                const startDate = new Date(dateInput.value);
+                const endDate = new Date(endDateInput.value);
+                const rangeStart = new Date(startDate.setHours(0, 0, 0, 0));
+                const rangeEnd = new Date(endDate.setHours(23, 59, 59, 999));
+
+                filteredEvents = allEvents.filter(e => {
+                    const eventTime = new Date(e.startTime || e.timestamp);
+                    return eventTime >= rangeStart && eventTime <= rangeEnd;
+                });
+            }
+
+            if (filteredEvents.length === 0) {
+                ctx.fillStyle = '#999';
+                ctx.font = '16px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('No events found for selected date/range', width / 2, height / 2);
+                return;
+            }
+
+            filteredEvents.sort((a, b) => {
+                const timeA = new Date(a.startTime || a.timestamp);
+                const timeB = new Date(b.startTime || b.timestamp);
+                return timeA - timeB;
+            });
+
+            const eventTimes = [];
+            filteredEvents.forEach(e => {
+                eventTimes.push(new Date(e.startTime || e.timestamp).getTime());
+                if (e.endTime) {
+                    eventTimes.push(new Date(e.endTime).getTime());
+                }
+            });
+
+            const minEventTime = Math.min(...eventTimes);
+            const maxEventTime = Math.max(...eventTimes);
+
+            const settings = getSettings();
+            const timeScale = settings.timeScale;
+            const buffer = (maxEventTime - minEventTime) * 0.1;
+
+            startTime = new Date(minEventTime - buffer);
+            endTime = new Date(maxEventTime + buffer);
+
+            drawTimeline(ctx, filteredEvents, startTime, endTime, width, height, padding, chartHeight, viewType, headerHeight);
+            updateLegend();
+        }
+
+        function drawTimeline(ctx, events, startTime, endTime, width, height, padding, chartHeight, viewType, headerHeight) {
+            const settings = getSettings();
+            const timeScale = settings.timeScale;
+            const actualTimeRange = endTime - startTime;
+            const scaledTimeRange = actualTimeRange / timeScale;
+            const chartWidth = width - padding * 2;
+
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, width, headerHeight);
+
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 18px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Activity Timeline', width / 2, 25);
+
+            const minTime = new Date(Math.min(...events.map(e => new Date(e.timestamp))));
+            const maxTime = new Date(Math.max(...events.map(e => new Date(e.timestamp))));
+            const timeRangeText = `${minTime.toLocaleString()} - ${maxTime.toLocaleString()}`;
+
+            ctx.fillStyle = '#666';
+            ctx.font = '13px sans-serif';
+            ctx.fillText(timeRangeText, width / 2, 43);
+
+            const chartTop = headerHeight + padding;
+            ctx.fillStyle = '#f3f4f6';
+            ctx.fillRect(padding, chartTop, chartWidth, chartHeight);
+
+            ctx.strokeStyle = '#d1d5db';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(padding, chartTop);
+            ctx.lineTo(padding, chartTop + chartHeight);
+            ctx.lineTo(padding + chartWidth, chartTop + chartHeight);
+            ctx.stroke();
+
+            const scaledRangeMs = scaledTimeRange * 1000;
+            let numTicks, tickInterval;
+
+            if (scaledRangeMs < 60000) {
+                numTicks = 10;
+                tickInterval = scaledRangeMs / numTicks;
+            } else if (scaledRangeMs < 3600000) {
+                numTicks = Math.min(12, Math.ceil(scaledRangeMs / 60000));
+                tickInterval = scaledRangeMs / numTicks;
+            } else if (scaledRangeMs < 86400000) {
+                numTicks = Math.min(24, Math.ceil(scaledRangeMs / 3600000));
+                tickInterval = scaledRangeMs / numTicks;
+            } else {
+                numTicks = Math.min(10, Math.ceil(scaledRangeMs / 86400000));
+                tickInterval = scaledRangeMs / numTicks;
+            }
+
+            for (let i = 0; i <= numTicks; i++) {
+                const x = padding + (chartWidth * i / numTicks);
+                const actualTickTime = startTime.getTime() + (actualTimeRange * i / numTicks);
+                const tickTime = new Date(actualTickTime);
+
+                ctx.strokeStyle = '#e5e7eb';
+                ctx.beginPath();
+                ctx.moveTo(x, chartTop);
+                ctx.lineTo(x, chartTop + chartHeight);
+                ctx.stroke();
+
+                ctx.fillStyle = '#666';
+                ctx.font = '11px sans-serif';
+                ctx.textAlign = 'center';
+
+                let label;
+                if (scaledRangeMs < 60000) {
+                    label = tickTime.getSeconds() + 's';
+                } else if (scaledRangeMs < 3600000) {
+                    label = tickTime.getHours() + ':' + String(tickTime.getMinutes()).padStart(2, '0');
+                } else if (scaledRangeMs < 86400000) {
+                    label = tickTime.getHours() + ':' + String(tickTime.getMinutes()).padStart(2, '0');
+                } else {
+                    label = (tickTime.getMonth() + 1) + '/' + tickTime.getDate() + ' ' + tickTime.getHours() + ':' + String(tickTime.getMinutes()).padStart(2, '0');
+                }
+
+                ctx.fillText(label, x, chartTop + chartHeight + 20);
+            }
+
+            const rowHeight = 40;
+            const eventTypes = [...new Set(events.map(e => e.type))];
+            const totalRows = eventTypes.length;
+            const actualRowHeight = Math.min(rowHeight, chartHeight / totalRows);
+
+            eventTypes.forEach((type, index) => {
+                const y = chartTop + (index * actualRowHeight);
+
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(0, y, padding - 5, actualRowHeight - 2);
+
+                ctx.fillStyle = '#333';
+                ctx.font = 'bold 13px sans-serif';
+                ctx.textAlign = 'right';
+                ctx.fillText(type, padding - 10, y + actualRowHeight / 2 + 5);
+            });
+
+            events.forEach(event => {
+                const eventStartTime = new Date(event.startTime || event.timestamp);
+                const eventEndTime = event.endTime ? new Date(event.endTime) : eventStartTime;
+
+                const scaledStartTime = (eventStartTime - startTime) / timeScale;
+                const scaledEndTime = (eventEndTime - startTime) / timeScale;
+
+                const x1 = padding + (scaledStartTime / scaledTimeRange) * chartWidth;
+                const x2 = padding + (scaledEndTime / scaledTimeRange) * chartWidth;
+
+                const typeIndex = eventTypes.indexOf(event.type);
+                const y = chartTop + (typeIndex * actualRowHeight);
+                const barHeight = actualRowHeight - 10;
+
+                const eventColors = getEventColors();
+                const color = eventColors[event.type] || '#999';
+
+                if (event.endTime && event.startTime !== event.endTime) {
+                    ctx.fillStyle = color;
+                    ctx.globalAlpha = event.isActive ? 0.7 : 0.5;
+                    ctx.fillRect(x1, y + 5, Math.max(x2 - x1, 2), barHeight);
+                    ctx.globalAlpha = 1;
+
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(x1, y + 5, Math.max(x2 - x1, 2), barHeight);
+
+                    ctx.fillStyle = color;
+                    ctx.beginPath();
+                    ctx.arc(x1, y + actualRowHeight / 2, 5, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.arc(x2, y + actualRowHeight / 2, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    ctx.fillStyle = color;
+                    ctx.beginPath();
+                    ctx.arc(x1, y + actualRowHeight / 2, 6, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+            });
+        }
+
+        function updateLegend() {
+            const legend = document.getElementById('timelineLegend');
+            const eventColors = getEventColors();
+            legend.innerHTML = Object.entries(eventColors).map(([type, color]) => `
+                <div class="legend-item">
+                    <div class="legend-color" style="background: ${color}"></div>
+                    <span class="legend-label">${type}</span>
+                </div>
+            `).join('');
+        }
+
+        function downloadTimeline() {
+            const canvas = document.getElementById('timelineCanvas');
+            const link = document.createElement('a');
+            const dateStr = document.getElementById('timelineDate').value;
+            link.download = `timeline_${dateStr}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            showToast('Timeline downloaded!');
+        }
+
+        document.getElementById('timelineView').addEventListener('change', function() {
+            if (this.value === 'range') {
+                document.getElementById('timelineEndDate').style.display = 'inline-block';
+            } else {
+                document.getElementById('timelineEndDate').style.display = 'none';
+            }
+        });
+
+        loadSettings();
+        loadTimelineSettings();
+        renderEventButtons();
+        displayEvents();
+
+        if (getActiveEvents().length > 0) {
+            startUpdateInterval();
+        }
+    </script>
+</body>
+</html>
