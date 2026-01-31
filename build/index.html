@@ -1101,7 +1101,9 @@
                 complementaryEvent: 'Complementary Event',
                 complementaryColor: 'Complementary Color',
                 createsVariant: 'Creates a mutually exclusive variant',
-                thisActionCannotBeUndone: 'This action cannot be undone.'
+                thisActionCannotBeUndone: 'This action cannot be undone.',
+                startTimeBeforeEnd: 'Start time must be before end time',
+                eventsCannotOverlap: 'Events of the same type cannot overlap'
             },
             fr: {
                 sessions: 'Sessions',
@@ -1176,7 +1178,9 @@
                 complementaryEvent: 'Événement Complémentaire',
                 complementaryColor: 'Couleur Complémentaire',
                 createsVariant: 'Crée une variante mutuellement exclusive',
-                thisActionCannotBeUndone: 'Cette action ne peut pas être annulée.'
+                thisActionCannotBeUndone: 'Cette action ne peut pas être annulée.',
+                startTimeBeforeEnd: 'L\'heure de début doit être avant l\'heure de fin',
+                eventsCannotOverlap: 'Les événements du même type ne peuvent pas se chevaucher'
             }
         };
 
@@ -2394,9 +2398,14 @@
         }
 
         let timelineEventRects = [];
+        let timelineStartTime = null;
+        let timelineEndTime = null;
+        let timelineSettings = null;
 
         function drawTimeline(ctx, events, startTime, endTime, width, height, leftPadding, rightPadding, topBottomPadding, chartHeight, viewType) {
             timelineEventRects = [];
+            timelineStartTime = startTime;
+            timelineEndTime = endTime;
             const settings = getSettings();
             const timeScale = settings.timeScale;
             const actualTimeRange = endTime - startTime;
@@ -2531,8 +2540,16 @@
             });
 
             events.forEach(event => {
-                const eventStartTime = new Date(event.startTime || event.timestamp);
-                const eventEndTime = event.endTime ? new Date(event.endTime) : eventStartTime;
+                const isPreviewEvent = dragPreviewState && event.id === dragPreviewState.eventId;
+
+                let eventStartTime, eventEndTime;
+                if (isPreviewEvent) {
+                    eventStartTime = new Date(dragPreviewState.startTime);
+                    eventEndTime = new Date(dragPreviewState.endTime);
+                } else {
+                    eventStartTime = new Date(event.startTime || event.timestamp);
+                    eventEndTime = event.endTime ? new Date(event.endTime) : eventStartTime;
+                }
 
                 const scaledStartTime = (eventStartTime - startTime) / timeScale;
                 const scaledEndTime = (eventEndTime - startTime) / timeScale;
@@ -2554,15 +2571,22 @@
                     const rectHeight = barHeight;
 
                     ctx.fillStyle = color;
-                    ctx.globalAlpha = event.isActive ? 0.7 : 0.5;
+                    ctx.globalAlpha = isPreviewEvent ? 0.3 : (event.isActive ? 0.7 : 0.5);
                     ctx.fillRect(rectX, rectY, rectWidth, rectHeight);
                     ctx.globalAlpha = 1;
 
                     ctx.strokeStyle = color;
-                    ctx.lineWidth = 2;
+                    ctx.lineWidth = isPreviewEvent ? 1 : 2;
+                    if (isPreviewEvent) {
+                        ctx.setLineDash([5, 5]);
+                    }
                     ctx.strokeRect(rectX, rectY, rectWidth, rectHeight);
+                    if (isPreviewEvent) {
+                        ctx.setLineDash([]);
+                    }
 
                     ctx.fillStyle = color;
+                    ctx.globalAlpha = isPreviewEvent ? 0.5 : 1;
                     ctx.beginPath();
                     ctx.arc(x1, y + actualRowHeight / 2, 5, 0, Math.PI * 2);
                     ctx.fill();
@@ -2570,13 +2594,17 @@
                     ctx.beginPath();
                     ctx.arc(x2, y + actualRowHeight / 2, 5, 0, Math.PI * 2);
                     ctx.fill();
+                    ctx.globalAlpha = 1;
 
                     timelineEventRects.push({
                         x: rectX,
                         y: rectY,
                         width: rectWidth,
                         height: rectHeight,
-                        event: event
+                        event: event,
+                        startX: x1,
+                        endX: x2,
+                        centerY: y + actualRowHeight / 2
                     });
                 } else {
                     ctx.fillStyle = color;
@@ -2622,44 +2650,271 @@
         const canvas = document.getElementById('timelineCanvas');
         const tooltip = document.getElementById('timelineTooltip');
 
+        let dragState = null;
+
+        function getEventAtPosition(x, y) {
+            for (const eventRect of timelineEventRects) {
+                if (x >= eventRect.x && x <= eventRect.x + eventRect.width &&
+                    y >= eventRect.y && y <= eventRect.y + eventRect.height) {
+                    return eventRect;
+                }
+            }
+            return null;
+        }
+
+        function getEdgeType(x, eventRect) {
+            const edgeThreshold = 15;
+            if (eventRect.startX && Math.abs(x - eventRect.startX) <= edgeThreshold) {
+                return 'start';
+            }
+            if (eventRect.endX && Math.abs(x - eventRect.endX) <= edgeThreshold) {
+                return 'end';
+            }
+            return null;
+        }
+
+        function checkOverlap(event, newStartTime, newEndTime) {
+            const events = getEvents();
+            const sameTypeEvents = events.filter(e => e.type === event.type && e.id !== event.id);
+
+            for (const otherEvent of sameTypeEvents) {
+                const otherStart = new Date(otherEvent.startTime).getTime();
+                const otherEnd = new Date(otherEvent.endTime).getTime();
+
+                if ((newStartTime >= otherStart && newStartTime < otherEnd) ||
+                    (newEndTime > otherStart && newEndTime <= otherEnd) ||
+                    (newStartTime <= otherStart && newEndTime >= otherEnd)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        canvas.addEventListener('mousedown', function(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const eventRect = getEventAtPosition(x, y);
+            if (eventRect && eventRect.event.endTime && !eventRect.event.isActive) {
+                const edgeType = getEdgeType(x, eventRect);
+                if (edgeType) {
+                    dragState = {
+                        eventRect: eventRect,
+                        edgeType: edgeType,
+                        originalStartTime: new Date(eventRect.event.startTime).getTime(),
+                        originalEndTime: new Date(eventRect.event.endTime).getTime()
+                    };
+                    canvas.style.cursor = edgeType === 'start' ? 'w-resize' : 'e-resize';
+                    e.preventDefault();
+                }
+            }
+        });
+
+        let dragPreviewState = null;
+        let tooltipTimeout = null;
+        let currentHoveredEvent = null;
+
         canvas.addEventListener('mousemove', function(e) {
             const rect = canvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
 
+            if (dragState) {
+                if (!timelineStartTime || !timelineEndTime) {
+                    return;
+                }
+
+                const settings = getSettings();
+                const timeScale = settings.timeScale;
+
+                const canvasContainer = canvas.parentElement;
+                const containerWidth = canvasContainer.offsetWidth;
+                const canvasWidth = containerWidth > 0 ? containerWidth : 800;
+                const leftPadding = 150;
+                const rightPadding = 60;
+                const chartWidth = canvasWidth - leftPadding - rightPadding;
+
+                const actualTimeRange = timelineEndTime - timelineStartTime;
+                const scaledTimeRange = actualTimeRange / timeScale;
+
+                const relativeX = x - leftPadding;
+                const timeOffset = (relativeX / chartWidth) * scaledTimeRange * timeScale;
+                const newTime = timelineStartTime.getTime() + timeOffset;
+
+                const event = dragState.eventRect.event;
+                let previewStartTime = dragState.edgeType === 'start' ? newTime : dragState.originalStartTime;
+                let previewEndTime = dragState.edgeType === 'end' ? newTime : dragState.originalEndTime;
+
+                if (previewStartTime < previewEndTime) {
+                    dragPreviewState = {
+                        eventId: event.id,
+                        startTime: previewStartTime,
+                        endTime: previewEndTime
+                    };
+                    generateTimeline();
+                } else {
+                    dragPreviewState = null;
+                }
+
+                tooltip.style.display = 'none';
+                e.preventDefault();
+                return;
+            }
+
             let found = false;
-            for (const eventRect of timelineEventRects) {
-                if (x >= eventRect.x && x <= eventRect.x + eventRect.width &&
-                    y >= eventRect.y && y <= eventRect.y + eventRect.height) {
+            const eventRect = getEventAtPosition(x, y);
 
-                    const event = eventRect.event;
-                    const startTime = new Date(event.startTime || event.timestamp);
-                    const endTime = event.endTime ? new Date(event.endTime) : null;
+            if (eventRect) {
+                if (eventRect.event.endTime && !eventRect.event.isActive) {
+                    const edgeType = getEdgeType(x, eventRect);
+                    if (edgeType) {
+                        canvas.style.cursor = edgeType === 'start' ? 'w-resize' : 'e-resize';
+                        found = true;
+                    } else {
+                        canvas.style.cursor = 'default';
+                    }
+                } else {
+                    canvas.style.cursor = 'default';
+                }
 
-                    let tooltipText = `<strong>${event.type}</strong><br>`;
-                    tooltipText += `Start: ${startTime.toLocaleString()}<br>`;
-                    if (endTime) {
-                        tooltipText += `End: ${endTime.toLocaleString()}<br>`;
-                        tooltipText += `Duration: ${formatDuration(event.duration)}`;
+                const event = eventRect.event;
+
+                // Check if we're hovering over a different event
+                if (currentHoveredEvent !== event.id) {
+                    // Clear any existing timeout
+                    if (tooltipTimeout) {
+                        clearTimeout(tooltipTimeout);
+                        tooltipTimeout = null;
                     }
 
-                    tooltip.innerHTML = tooltipText;
-                    tooltip.style.display = 'block';
-                    tooltip.style.left = (e.pageX + 15) + 'px';
-                    tooltip.style.top = (e.pageY + 15) + 'px';
+                    // Hide tooltip immediately when switching events
+                    tooltip.style.display = 'none';
+                    currentHoveredEvent = event.id;
 
-                    found = true;
-                    break;
+                    // Set timeout to show tooltip after 1.5 seconds
+                    tooltipTimeout = setTimeout(() => {
+                        const startTime = new Date(event.startTime || event.timestamp);
+                        const endTime = event.endTime ? new Date(event.endTime) : null;
+
+                        let tooltipText = `<strong>${event.type}</strong><br>`;
+                        tooltipText += `Start: ${startTime.toLocaleString()}<br>`;
+                        if (endTime) {
+                            tooltipText += `End: ${endTime.toLocaleString()}<br>`;
+                            tooltipText += `Duration: ${formatDuration(event.duration)}`;
+                        }
+
+                        tooltip.innerHTML = tooltipText;
+                        tooltip.style.display = 'block';
+                        tooltip.style.left = (e.pageX + 15) + 'px';
+                        tooltip.style.top = (e.pageY + 15) + 'px';
+                    }, 1500);
+                } else {
+                    // Same event - just update position if tooltip is visible
+                    if (tooltip.style.display === 'block') {
+                        tooltip.style.left = (e.pageX + 15) + 'px';
+                        tooltip.style.top = (e.pageY + 15) + 'px';
+                    }
                 }
+
+                found = true;
             }
 
             if (!found) {
+                // Clear timeout and hide tooltip when not hovering over any event
+                if (tooltipTimeout) {
+                    clearTimeout(tooltipTimeout);
+                    tooltipTimeout = null;
+                }
                 tooltip.style.display = 'none';
+                canvas.style.cursor = 'default';
+                currentHoveredEvent = null;
+            }
+        });
+
+        canvas.addEventListener('mouseup', function(e) {
+            if (dragState) {
+                if (!timelineStartTime || !timelineEndTime) {
+                    dragState = null;
+                    canvas.style.cursor = 'default';
+                    return;
+                }
+
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+
+                const settings = getSettings();
+                const timeScale = settings.timeScale;
+
+                const canvasContainer = canvas.parentElement;
+                const containerWidth = canvasContainer.offsetWidth;
+                const canvasWidth = containerWidth > 0 ? containerWidth : 800;
+                const leftPadding = 150;
+                const rightPadding = 60;
+                const chartWidth = canvasWidth - leftPadding - rightPadding;
+
+                const actualTimeRange = timelineEndTime - timelineStartTime;
+                const scaledTimeRange = actualTimeRange / timeScale;
+
+                const relativeX = x - leftPadding;
+                const timeOffset = (relativeX / chartWidth) * scaledTimeRange * timeScale;
+                const newTime = timelineStartTime.getTime() + timeOffset;
+
+                const event = dragState.eventRect.event;
+                let newStartTime = dragState.edgeType === 'start' ? newTime : dragState.originalStartTime;
+                let newEndTime = dragState.edgeType === 'end' ? newTime : dragState.originalEndTime;
+
+                if (newStartTime >= newEndTime) {
+                    showToast(t('startTimeBeforeEnd'));
+                    dragState = null;
+                    dragPreviewState = null;
+                    canvas.style.cursor = 'default';
+                    generateTimeline();
+                    return;
+                }
+
+                if (checkOverlap(event, newStartTime, newEndTime)) {
+                    showToast(t('eventsCannotOverlap'));
+                    dragState = null;
+                    dragPreviewState = null;
+                    canvas.style.cursor = 'default';
+                    generateTimeline();
+                    return;
+                }
+
+                const events = getEvents();
+                const eventIndex = events.findIndex(e => e.id === event.id);
+                if (eventIndex !== -1) {
+                    events[eventIndex].startTime = new Date(newStartTime).toISOString();
+                    events[eventIndex].endTime = new Date(newEndTime).toISOString();
+                    events[eventIndex].duration = Math.floor((newEndTime - newStartTime) / 1000);
+                    saveEvents(events);
+                    dragPreviewState = null;
+                    generateTimeline();
+                    displayEvents();
+                }
+
+                dragState = null;
+                dragPreviewState = null;
+                canvas.style.cursor = 'default';
             }
         });
 
         canvas.addEventListener('mouseleave', function() {
+            // Clear tooltip timeout
+            if (tooltipTimeout) {
+                clearTimeout(tooltipTimeout);
+                tooltipTimeout = null;
+            }
             tooltip.style.display = 'none';
+            currentHoveredEvent = null;
+
+            if (dragState) {
+                dragState = null;
+                dragPreviewState = null;
+                canvas.style.cursor = 'default';
+                generateTimeline();
+            }
         });
 
     </script>
