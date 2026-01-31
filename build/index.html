@@ -28,6 +28,105 @@
             padding: 30px;
         }
 
+        .view {
+            display: none;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        .session-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .session-card {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .session-card:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+
+        .session-card h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .session-card .session-meta {
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+
+        .session-card .delete-session-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .session-card:hover .delete-session-btn {
+            opacity: 1;
+        }
+
+        .session-card .delete-session-btn:hover {
+            background: #c82333;
+        }
+
+        .new-session-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: 2px dashed #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 150px;
+            color: white;
+            font-size: 48px;
+        }
+
+        .new-session-card:hover {
+            border-color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .back-btn {
+            padding: 10px 20px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-bottom: 20px;
+            transition: background 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: #5a6268;
+        }
+
         h1 {
             color: #333;
             margin-bottom: 10px;
@@ -625,19 +724,57 @@
 </head>
 <body>
     <div class="container">
-        <h1>Event Tracker</h1>
-        <p class="subtitle">Start and stop events to track your activities</p>
+        <!-- Landing Page View -->
+        <div id="landingView" class="view active">
+            <h1>📊 Event Tracker</h1>
+            <p class="subtitle">Select a tracking session or create a new one</p>
 
-        <div class="controls">
-            <button class="csv-btn" onclick="exportCSV()">Export to CSV</button>
-            <button class="reset-btn" onclick="resetEvents()">Reset Events</button>
+            <h2 style="margin-bottom: 20px; color: #333;">Your Tracking Sessions</h2>
+            <div class="session-list" id="sessionList">
+                <!-- Sessions will be rendered here -->
+            </div>
+
+            <h2 style="margin-top: 40px; margin-bottom: 20px; color: #333;">⚙️ Global Settings</h2>
+            <div class="settings-panel">
+                <div class="setting-section">
+                    <h3>Event Types</h3>
+                    <p style="color: #666; font-size: 14px; margin-bottom: 15px;">Define the types of events you want to track across all sessions</p>
+                    <div class="event-types-list" id="globalEventTypesList"></div>
+                    <button class="add-event-btn" onclick="addGlobalEventType()">➕ Add Event Type</button>
+                </div>
+
+                <div class="setting-section" style="margin-top: 30px;">
+                    <h3>Timeline Time Scale</h3>
+                    <p style="color: #666; font-size: 14px; margin-bottom: 15px;">Compress or expand the timeline visualization</p>
+                    <select id="globalTimeScaleSetting" onchange="saveGlobalTimeScale()">
+                        <option value="1">1:1 (Real-time - 1 second = 1 second)</option>
+                        <option value="60">1:60 (1 minute = 1 second)</option>
+                        <option value="120">1:120 (2 minutes = 1 second)</option>
+                        <option value="300">1:300 (5 minutes = 1 second)</option>
+                        <option value="600">1:600 (10 minutes = 1 second)</option>
+                        <option value="1800">1:1800 (30 minutes = 1 second)</option>
+                        <option value="3600">1:3600 (1 hour = 1 second)</option>
+                    </select>
+                </div>
+            </div>
         </div>
 
-        <div class="tabs">
-            <button class="tab active" onclick="switchTab('events')">Events</button>
-            <button class="tab" onclick="switchTab('timeline')">Timeline</button>
-            <button class="tab" onclick="switchTab('settings')">Settings</button>
-        </div>
+        <!-- Tracking View -->
+        <div id="trackingView" class="view">
+            <button class="back-btn" onclick="backToLanding()">← Back to Sessions</button>
+
+            <h1 id="sessionTitle">Event Tracker</h1>
+            <p class="subtitle">Start and stop events to track your activities</p>
+
+            <div class="controls">
+                <button class="csv-btn" onclick="exportCSV()">Export to CSV</button>
+                <button class="reset-btn" onclick="resetEvents()">Reset Events</button>
+            </div>
+
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('events')">Events</button>
+                <button class="tab" onclick="switchTab('timeline')">Timeline</button>
+            </div>
 
         <div id="eventsTab" class="tab-content active">
             <div class="available-events-panel">
@@ -674,44 +811,274 @@
             </div>
         </div>
 
-        <div id="settingsTab" class="tab-content">
-            <div class="settings-section">
-                <h2>Settings</h2>
-
-                <h3>Event Types</h3>
-                <p>Customize your event types and colors. Changes will be applied after saving.</p>
-                <div class="event-types-list" id="eventTypesList"></div>
-                <button class="add-event-btn" onclick="addEventTypeRow()">➕ Add Event Type</button>
-                <button class="save-settings-btn" onclick="saveEventTypes()">💾 Save Event Types</button>
-
-                <h3>Timeline Scale</h3>
-                <p>Adjust how time is displayed in the timeline visualization. This compresses or expands the time axis.</p>
-                <div class="setting-item">
-                    <select id="timeScaleSetting" onchange="saveTimeScale()">
-                        <option value="1">1:1 (Real-time - 1 second = 1 second)</option>
-                        <option value="60">1:60 (1 minute = 1 second)</option>
-                        <option value="120">1:120 (2 minutes = 1 second)</option>
-                        <option value="300">1:300 (5 minutes = 1 second)</option>
-                        <option value="600">1:600 (10 minutes = 1 second)</option>
-                        <option value="1800">1:1800 (30 minutes = 1 second)</option>
-                        <option value="3600">1:3600 (1 hour = 1 second)</option>
-                    </select>
-                </div>
-            </div>
         </div>
+        <!-- End of Tracking View -->
     </div>
+    <!-- End of Container -->
 
     <div id="toast" class="toast"></div>
     <div class="timeline-tooltip" id="timelineTooltip"></div>
 
     <script>
-        const STORAGE_KEY = 'eventTrackerData';
-        const ACTIVE_EVENTS_KEY = 'activeEvents';
-        const SETTINGS_KEY = 'eventTrackerSettings';
-        const EVENT_TYPES_KEY = 'eventTypes';
+        const SESSIONS_KEY = 'trackingSessions';
+        const GLOBAL_SETTINGS_KEY = 'globalSettings';
+        let currentSessionId = null;
         let updateInterval;
 
         const DEFAULT_EVENT_TYPES = [];
+
+        function getSessions() {
+            const data = localStorage.getItem(SESSIONS_KEY);
+            return data ? JSON.parse(data) : [];
+        }
+
+        function saveSessions(sessions) {
+            localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
+        }
+
+        function createSession(name) {
+            const sessions = getSessions();
+            const newSession = {
+                id: 'session-' + Date.now(),
+                name: name || 'Untitled Session',
+                createdAt: new Date().toISOString(),
+                lastModified: new Date().toISOString()
+            };
+            sessions.push(newSession);
+            saveSessions(sessions);
+            return newSession;
+        }
+
+        function deleteSession(sessionId) {
+            const sessions = getSessions().filter(s => s.id !== sessionId);
+            saveSessions(sessions);
+            localStorage.removeItem(sessionId + '-events');
+            localStorage.removeItem(sessionId + '-activeEvents');
+        }
+
+        function updateSessionTimestamp(sessionId) {
+            const sessions = getSessions();
+            const session = sessions.find(s => s.id === sessionId);
+            if (session) {
+                session.lastModified = new Date().toISOString();
+                saveSessions(sessions);
+            }
+        }
+
+        function getSessionStorageKey(key) {
+            return currentSessionId ? `${currentSessionId}-${key}` : key;
+        }
+
+        function getGlobalSettings() {
+            const data = localStorage.getItem(GLOBAL_SETTINGS_KEY);
+            return data ? JSON.parse(data) : { timeScale: 1, eventTypes: [] };
+        }
+
+        function saveGlobalSettings(settings) {
+            localStorage.setItem(GLOBAL_SETTINGS_KEY, JSON.stringify(settings));
+        }
+
+        function showLandingView() {
+            document.getElementById('landingView').classList.add('active');
+            document.getElementById('trackingView').classList.remove('active');
+            currentSessionId = null;
+            stopUpdateInterval();
+            renderSessionList();
+            renderGlobalEventTypes();
+            loadGlobalSettings();
+        }
+
+        function showTrackingView(sessionId) {
+            currentSessionId = sessionId;
+            document.getElementById('landingView').classList.remove('active');
+            document.getElementById('trackingView').classList.add('active');
+
+            const sessions = getSessions();
+            const session = sessions.find(s => s.id === sessionId);
+            if (session) {
+                document.getElementById('sessionTitle').textContent = session.name;
+            }
+
+            renderEventButtons();
+            displayEvents();
+            loadTimelineSettings();
+
+            if (getActiveEvents().length > 0) {
+                startUpdateInterval();
+            }
+        }
+
+        function backToLanding() {
+            if (confirm('Return to session list? Any active events will continue running.')) {
+                showLandingView();
+            }
+        }
+
+        function renderSessionList() {
+            const sessions = getSessions();
+            const container = document.getElementById('sessionList');
+
+            const sessionCards = sessions.map(session => {
+                const created = new Date(session.createdAt).toLocaleDateString();
+                const modified = new Date(session.lastModified).toLocaleString();
+                return `
+                    <div class="session-card" onclick="openSession('${session.id}')">
+                        <button class="delete-session-btn" onclick="event.stopPropagation(); deleteSessionConfirm('${session.id}')">Delete</button>
+                        <h3>${session.name}</h3>
+                        <div class="session-meta">Created: ${created}</div>
+                        <div class="session-meta">Last modified: ${modified}</div>
+                    </div>
+                `;
+            }).join('');
+
+            const newSessionCard = `
+                <div class="session-card new-session-card" onclick="createNewSession()">
+                    <div>+</div>
+                </div>
+            `;
+
+            container.innerHTML = newSessionCard + sessionCards;
+        }
+
+        function createNewSession() {
+            const name = prompt('Enter session name:');
+            if (name) {
+                const session = createSession(name);
+                openSession(session.id);
+            }
+        }
+
+        function openSession(sessionId) {
+            showTrackingView(sessionId);
+        }
+
+        function deleteSessionConfirm(sessionId) {
+            const sessions = getSessions();
+            const session = sessions.find(s => s.id === sessionId);
+            if (session && confirm(`Delete session "${session.name}"? This cannot be undone.`)) {
+                deleteSession(sessionId);
+                renderSessionList();
+                showToast('Session deleted');
+            }
+        }
+
+        function renderGlobalEventTypes() {
+            const eventTypes = getEventTypes();
+            const container = document.getElementById('globalEventTypesList');
+
+            if (eventTypes.length === 0) {
+                container.innerHTML = '<div class="empty-state">No event types yet. Click "Add Event Type" below to get started.</div>';
+                return;
+            }
+
+            container.innerHTML = eventTypes.map((eventType, index) => {
+                const complementaryOptions = eventTypes
+                    .filter((_, i) => i !== index)
+                    .map(et => `<option value="${et.name}" ${eventType.complementary === et.name ? 'selected' : ''}>${et.name}</option>`)
+                    .join('');
+
+                return `
+                    <div class="event-type-item">
+                        <input type="text"
+                               value="${eventType.name}"
+                               placeholder="Event name"
+                               data-index="${index}"
+                               onchange="updateGlobalEventTypeName(${index}, this.value)">
+                        <input type="color"
+                               value="${eventType.color}"
+                               data-index="${index}"
+                               onchange="updateGlobalEventTypeColor(${index}, this.value)">
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <label class="complementary-label">Complementary:</label>
+                            <select onchange="updateGlobalEventTypeComplementary(${index}, this.value)">
+                                <option value="">None</option>
+                                ${complementaryOptions}
+                            </select>
+                        </div>
+                        <button class="delete-event-btn" onclick="deleteGlobalEventType(${index})">🗑️ Delete</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function addGlobalEventType() {
+            const eventTypes = getEventTypes();
+            eventTypes.push({ name: 'New Event', color: '#999999', complementary: null });
+            saveEventTypesToStorage(eventTypes);
+            renderGlobalEventTypes();
+        }
+
+        function updateGlobalEventTypeName(index, newName) {
+            const eventTypes = getEventTypes();
+            if (eventTypes[index]) {
+                const oldName = eventTypes[index].name;
+                eventTypes[index].name = newName;
+
+                eventTypes.forEach(et => {
+                    if (et.complementary === oldName) {
+                        et.complementary = newName;
+                    }
+                });
+
+                saveEventTypesToStorage(eventTypes);
+                renderGlobalEventTypes();
+            }
+        }
+
+        function updateGlobalEventTypeColor(index, newColor) {
+            const eventTypes = getEventTypes();
+            if (eventTypes[index]) {
+                eventTypes[index].color = newColor;
+                saveEventTypesToStorage(eventTypes);
+            }
+        }
+
+        function updateGlobalEventTypeComplementary(index, complementaryName) {
+            const eventTypes = getEventTypes();
+            if (eventTypes[index]) {
+                eventTypes[index].complementary = complementaryName || null;
+
+                if (complementaryName) {
+                    const complementaryIndex = eventTypes.findIndex(e => e.name === complementaryName);
+                    if (complementaryIndex !== -1) {
+                        eventTypes[complementaryIndex].complementary = eventTypes[index].name;
+                    }
+                }
+
+                saveEventTypesToStorage(eventTypes);
+                renderGlobalEventTypes();
+            }
+        }
+
+        function deleteGlobalEventType(index) {
+            const eventTypes = getEventTypes();
+            const eventType = eventTypes[index];
+
+            if (confirm(`Delete "${eventType.name}"? This cannot be undone.`)) {
+                eventTypes.forEach(et => {
+                    if (et.complementary === eventType.name) {
+                        et.complementary = null;
+                    }
+                });
+
+                eventTypes.splice(index, 1);
+                saveEventTypesToStorage(eventTypes);
+                renderGlobalEventTypes();
+            }
+        }
+
+        function saveGlobalTimeScale() {
+            const timeScale = parseInt(document.getElementById('globalTimeScaleSetting').value);
+            const settings = getGlobalSettings();
+            settings.timeScale = timeScale;
+            saveGlobalSettings(settings);
+            showToast('Time scale updated!');
+        }
+
+        function loadGlobalSettings() {
+            const settings = getGlobalSettings();
+            document.getElementById('globalTimeScaleSetting').value = settings.timeScale || 1;
+        }
 
         function getComplementaryEvent(eventTypeName) {
             const eventTypes = getEventTypes();
@@ -750,7 +1117,7 @@
             };
 
             activeEvents.push(event);
-            localStorage.setItem(ACTIVE_EVENTS_KEY, JSON.stringify(activeEvents));
+            saveActiveEvents(activeEvents);
 
             renderEventButtons();
             const complementaryMsg = complementaryEventName ? ` (stopped ${complementaryEventName})` : '';
@@ -772,10 +1139,10 @@
 
                 let events = getEvents();
                 events.push(event);
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+                saveEvents(events);
 
                 activeEvents.splice(eventIndex, 1);
-                localStorage.setItem(ACTIVE_EVENTS_KEY, JSON.stringify(activeEvents));
+                saveActiveEvents(activeEvents);
 
                 if (!silent) {
                     renderEventButtons();
@@ -790,13 +1157,27 @@
         }
 
         function getEvents() {
-            const stored = localStorage.getItem(STORAGE_KEY);
+            if (!currentSessionId) return [];
+            const stored = localStorage.getItem(getSessionStorageKey('events'));
             return stored ? JSON.parse(stored) : [];
         }
 
+        function saveEvents(events) {
+            if (!currentSessionId) return;
+            localStorage.setItem(getSessionStorageKey('events'), JSON.stringify(events));
+            updateSessionTimestamp(currentSessionId);
+        }
+
         function getActiveEvents() {
-            const stored = localStorage.getItem(ACTIVE_EVENTS_KEY);
+            if (!currentSessionId) return [];
+            const stored = localStorage.getItem(getSessionStorageKey('activeEvents'));
             return stored ? JSON.parse(stored) : [];
+        }
+
+        function saveActiveEvents(activeEvents) {
+            if (!currentSessionId) return;
+            localStorage.setItem(getSessionStorageKey('activeEvents'), JSON.stringify(activeEvents));
+            updateSessionTimestamp(currentSessionId);
         }
 
         function formatDuration(seconds) {
@@ -820,43 +1201,50 @@
         }
 
         function getEventTypes() {
-            const stored = localStorage.getItem(EVENT_TYPES_KEY);
-            return stored ? JSON.parse(stored) : DEFAULT_EVENT_TYPES;
+            const settings = getGlobalSettings();
+            return settings.eventTypes || DEFAULT_EVENT_TYPES;
         }
 
         function saveEventTypesToStorage(eventTypes) {
-            localStorage.setItem(EVENT_TYPES_KEY, JSON.stringify(eventTypes));
+            const settings = getGlobalSettings();
+            settings.eventTypes = eventTypes;
+            saveGlobalSettings(settings);
         }
 
         function getSettings() {
-            const stored = localStorage.getItem(SETTINGS_KEY);
-            return stored ? JSON.parse(stored) : {
-                timeScale: 1,
+            const globalSettings = getGlobalSettings();
+            if (!currentSessionId) {
+                return {
+                    timeScale: globalSettings.timeScale || 1,
+                    timelineDate: new Date().toISOString().split('T')[0],
+                    timelineView: 'day',
+                    timelineEndDate: new Date().toISOString().split('T')[0]
+                };
+            }
+            const stored = localStorage.getItem(getSessionStorageKey('settings'));
+            const sessionSettings = stored ? JSON.parse(stored) : {
                 timelineDate: new Date().toISOString().split('T')[0],
                 timelineView: 'day',
                 timelineEndDate: new Date().toISOString().split('T')[0]
             };
-        }
-
-        function saveTimeScale() {
-            const timeScale = parseInt(document.getElementById('timeScaleSetting').value);
-            const settings = getSettings();
-            settings.timeScale = timeScale;
-            localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-            showToast('Time scale updated!');
-
-            const timelineTab = document.getElementById('timelineTab');
-            if (timelineTab.classList.contains('active')) {
-                generateTimeline();
-            }
+            return {
+                timeScale: globalSettings.timeScale || 1,
+                ...sessionSettings
+            };
         }
 
         function saveTimelineSettings() {
+            if (!currentSessionId) return;
             const settings = getSettings();
             settings.timelineDate = document.getElementById('timelineDate').value;
             settings.timelineView = document.getElementById('timelineView').value;
             settings.timelineEndDate = document.getElementById('timelineEndDate').value;
-            localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+            const sessionSettings = {
+                timelineDate: settings.timelineDate,
+                timelineView: settings.timelineView,
+                timelineEndDate: settings.timelineEndDate
+            };
+            localStorage.setItem(getSessionStorageKey('settings'), JSON.stringify(sessionSettings));
         }
 
         function loadTimelineSettings() {
@@ -885,151 +1273,10 @@
             if (tabName === 'timeline') {
                 loadTimelineSettings();
                 generateTimeline();
-            } else if (tabName === 'settings') {
-                loadSettings();
             }
         }
 
-        function loadSettings() {
-            const settings = getSettings();
-            document.getElementById('timeScaleSetting').value = settings.timeScale;
-            renderEventTypesList();
-        }
 
-        function renderEventTypesList() {
-            const eventTypes = getEventTypes();
-            const container = document.getElementById('eventTypesList');
-
-            if (eventTypes.length === 0) {
-                container.innerHTML = '<div class="empty-state">No event types yet. Click "Add Event Type" below to get started.</div>';
-                return;
-            }
-
-            container.innerHTML = eventTypes.map((eventType, index) => {
-                const complementaryOptions = eventTypes
-                    .filter((_, i) => i !== index)
-                    .map(et => `<option value="${et.name}" ${eventType.complementary === et.name ? 'selected' : ''}>${et.name}</option>`)
-                    .join('');
-
-                return `
-                    <div class="event-type-item">
-                        <input type="text"
-                               value="${eventType.name}"
-                               placeholder="Event name"
-                               data-index="${index}"
-                               onchange="updateEventTypeName(${index}, this.value)">
-                        <input type="color"
-                               value="${eventType.color}"
-                               data-index="${index}"
-                               onchange="updateEventTypeColor(${index}, this.value)">
-                        <div style="display: flex; flex-direction: column; gap: 4px;">
-                            <label class="complementary-label">Complementary:</label>
-                            <select onchange="updateEventTypeComplementary(${index}, this.value)">
-                                <option value="">None</option>
-                                ${complementaryOptions}
-                            </select>
-                        </div>
-                        <button class="delete-event-btn" onclick="deleteEventType(${index})">🗑️ Delete</button>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function updateEventTypeName(index, newName) {
-            const eventTypes = getEventTypes();
-            if (eventTypes[index]) {
-                const oldName = eventTypes[index].name;
-                eventTypes[index].name = newName;
-
-                eventTypes.forEach(et => {
-                    if (et.complementary === oldName) {
-                        et.complementary = newName;
-                    }
-                });
-
-                saveEventTypesToStorage(eventTypes);
-                renderEventTypesList();
-            }
-        }
-
-        function updateEventTypeColor(index, newColor) {
-            const eventTypes = getEventTypes();
-            if (eventTypes[index]) {
-                eventTypes[index].color = newColor;
-                saveEventTypesToStorage(eventTypes);
-            }
-        }
-
-        function updateEventTypeComplementary(index, complementaryName) {
-            const eventTypes = getEventTypes();
-            if (eventTypes[index]) {
-                eventTypes[index].complementary = complementaryName || null;
-
-                if (complementaryName) {
-                    const complementaryIndex = eventTypes.findIndex(e => e.name === complementaryName);
-                    if (complementaryIndex !== -1) {
-                        eventTypes[complementaryIndex].complementary = eventTypes[index].name;
-                    }
-                }
-
-                saveEventTypesToStorage(eventTypes);
-                renderEventTypesList();
-            }
-        }
-
-        function addEventTypeRow() {
-            const eventTypes = getEventTypes();
-            eventTypes.push({ name: 'New Event', color: '#999999', complementary: null });
-            saveEventTypesToStorage(eventTypes);
-            renderEventTypesList();
-        }
-
-        function deleteEventType(index) {
-            const eventTypes = getEventTypes();
-            const eventType = eventTypes[index];
-
-            const activeEvents = getActiveEvents();
-            const hasActiveEvents = activeEvents.some(e => e.type === eventType.name);
-
-            if (hasActiveEvents) {
-                showToast('Cannot delete event type with active events. Stop them first.');
-                return;
-            }
-
-            if (confirm(`Delete "${eventType.name}"? This cannot be undone.`)) {
-                eventTypes.forEach(et => {
-                    if (et.complementary === eventType.name) {
-                        et.complementary = null;
-                    }
-                });
-
-                eventTypes.splice(index, 1);
-                saveEventTypesToStorage(eventTypes);
-                renderEventTypesList();
-            }
-        }
-
-        function saveEventTypes() {
-            const eventTypes = getEventTypes();
-
-            const names = eventTypes.map(e => e.name.trim());
-            const uniqueNames = new Set(names);
-
-            if (names.some(name => !name)) {
-                showToast('All event types must have a name!');
-                return;
-            }
-
-            if (names.length !== uniqueNames.size) {
-                showToast('Event type names must be unique!');
-                return;
-            }
-
-            saveEventTypesToStorage(eventTypes);
-            renderEventButtons();
-            displayEvents();
-            showToast('Event types saved successfully!');
-        }
 
         function getEventTypeClass(name) {
             return name.toLowerCase().replace(/\s+/g, '-');
@@ -1040,8 +1287,13 @@
             const eventTypes = getEventTypes();
             const container = document.getElementById('eventButtons');
 
+            if (!currentSessionId) {
+                container.innerHTML = '<div class="empty-state">No session selected.</div>';
+                return;
+            }
+
             if (eventTypes.length === 0) {
-                container.innerHTML = '<div class="empty-state">No event types defined. Go to Settings to add event types.</div>';
+                container.innerHTML = '<div class="empty-state">No event types defined. Return to the landing page to add event types in Global Settings.</div>';
                 return;
             }
 
@@ -1096,9 +1348,15 @@
         }
 
         function displayEvents() {
+            const listContainer = document.getElementById('eventsList');
+
+            if (!currentSessionId) {
+                listContainer.innerHTML = '<div class="empty-state">No session selected.</div>';
+                return;
+            }
+
             const events = getEvents();
             const activeEvents = getActiveEvents();
-            const listContainer = document.getElementById('eventsList');
 
             const allEvents = [...events];
 
@@ -1231,13 +1489,16 @@
         }
 
         function resetEvents() {
-            if (confirm('Are you sure you want to reset all events? This will stop all active events and clear all data. This cannot be undone.')) {
-                localStorage.removeItem(STORAGE_KEY);
-                localStorage.removeItem(ACTIVE_EVENTS_KEY);
+            if (!currentSessionId) return;
+            if (confirm('Are you sure you want to reset all events in this session? This will stop all active events and clear all data. This cannot be undone.')) {
+                localStorage.removeItem(getSessionStorageKey('events'));
+                localStorage.removeItem(getSessionStorageKey('activeEvents'));
+                localStorage.removeItem(getSessionStorageKey('settings'));
                 stopUpdateInterval();
                 renderEventButtons();
                 displayEvents();
                 clearTimeline();
+                updateSessionTimestamp(currentSessionId);
                 showToast('All events have been reset!');
             }
         }
@@ -1629,14 +1890,7 @@
             tooltip.style.display = 'none';
         });
 
-        loadSettings();
-        loadTimelineSettings();
-        renderEventButtons();
-        displayEvents();
-
-        if (getActiveEvents().length > 0) {
-            startUpdateInterval();
-        }
+        showLandingView();
     </script>
 </body>
 </html>
