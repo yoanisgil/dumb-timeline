@@ -2296,8 +2296,9 @@
             const ctx = canvas.getContext('2d');
 
             const dpr = window.devicePixelRatio || 1;
-            const rect = canvas.getBoundingClientRect();
-            const canvasWidth = rect.width > 0 ? rect.width : 800;
+            const canvasContainer = canvas.parentElement;
+            const containerWidth = canvasContainer.offsetWidth;
+            const canvasWidth = containerWidth > 0 ? containerWidth : 800;
 
             // Calculate available viewport height for timeline
             const viewportHeight = window.innerHeight;
@@ -2316,7 +2317,7 @@
 
             canvas.width = canvasWidth * dpr;
             canvas.height = canvasHeight * dpr;
-            canvas.style.width = canvasWidth + 'px';
+            canvas.style.width = '100%';
             canvas.style.height = canvasHeight + 'px';
             ctx.scale(dpr, dpr);
 
