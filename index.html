@@ -19,7 +19,8 @@
         }
 
         .container {
-            max-width: 800px;
+            max-width: 95%;
+            width: 100%;
             margin: 0 auto;
             background: white;
             border-radius: 12px;
@@ -494,6 +495,20 @@
             cursor: crosshair;
         }
 
+        .timeline-tooltip {
+            position: fixed;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            pointer-events: none;
+            z-index: 1000;
+            display: none;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
         .timeline-legend {
             display: flex;
             flex-wrap: wrap;
@@ -615,7 +630,6 @@
 
         <div class="controls">
             <button class="csv-btn" onclick="exportCSV()">Export to CSV</button>
-            <button class="timeline-btn" onclick="toggleTimeline()">View Timeline</button>
             <button class="reset-btn" onclick="resetEvents()">Reset Events</button>
         </div>
 
@@ -688,6 +702,7 @@
     </div>
 
     <div id="toast" class="toast"></div>
+    <div class="timeline-tooltip" id="timelineTooltip"></div>
 
     <script>
         const STORAGE_KEY = 'eventTrackerData';
@@ -1305,8 +1320,10 @@
             const width = rect.width;
             const height = 650;
             const headerHeight = 50;
-            const padding = 60;
-            const chartHeight = height - padding * 2 - headerHeight;
+            const leftPadding = 150;
+            const rightPadding = 60;
+            const topBottomPadding = 60;
+            const chartHeight = height - topBottomPadding * 2 - headerHeight;
 
             ctx.clearRect(0, 0, width, height);
 
@@ -1366,16 +1383,19 @@
             startTime = new Date(minEventTime - buffer);
             endTime = new Date(maxEventTime + buffer);
 
-            drawTimeline(ctx, filteredEvents, startTime, endTime, width, height, padding, chartHeight, viewType, headerHeight);
+            drawTimeline(ctx, filteredEvents, startTime, endTime, width, height, leftPadding, rightPadding, topBottomPadding, chartHeight, viewType, headerHeight);
             updateLegend();
         }
 
-        function drawTimeline(ctx, events, startTime, endTime, width, height, padding, chartHeight, viewType, headerHeight) {
+        let timelineEventRects = [];
+
+        function drawTimeline(ctx, events, startTime, endTime, width, height, leftPadding, rightPadding, topBottomPadding, chartHeight, viewType, headerHeight) {
+            timelineEventRects = [];
             const settings = getSettings();
             const timeScale = settings.timeScale;
             const actualTimeRange = endTime - startTime;
             const scaledTimeRange = actualTimeRange / timeScale;
-            const chartWidth = width - padding * 2;
+            const chartWidth = width - leftPadding - rightPadding;
 
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, width, headerHeight);
@@ -1393,16 +1413,16 @@
             ctx.font = '13px sans-serif';
             ctx.fillText(timeRangeText, width / 2, 43);
 
-            const chartTop = headerHeight + padding;
+            const chartTop = headerHeight + topBottomPadding;
             ctx.fillStyle = '#f3f4f6';
-            ctx.fillRect(padding, chartTop, chartWidth, chartHeight);
+            ctx.fillRect(leftPadding, chartTop, chartWidth, chartHeight);
 
             ctx.strokeStyle = '#d1d5db';
             ctx.lineWidth = 1;
             ctx.beginPath();
-            ctx.moveTo(padding, chartTop);
-            ctx.lineTo(padding, chartTop + chartHeight);
-            ctx.lineTo(padding + chartWidth, chartTop + chartHeight);
+            ctx.moveTo(leftPadding, chartTop);
+            ctx.lineTo(leftPadding, chartTop + chartHeight);
+            ctx.lineTo(leftPadding + chartWidth, chartTop + chartHeight);
             ctx.stroke();
 
             const scaledRangeMs = scaledTimeRange * 1000;
@@ -1423,7 +1443,7 @@
             }
 
             for (let i = 0; i <= numTicks; i++) {
-                const x = padding + (chartWidth * i / numTicks);
+                const x = leftPadding + (chartWidth * i / numTicks);
                 const actualTickTime = startTime.getTime() + (actualTimeRange * i / numTicks);
                 const tickTime = new Date(actualTickTime);
 
@@ -1460,12 +1480,12 @@
                 const y = chartTop + (index * actualRowHeight);
 
                 ctx.fillStyle = '#fff';
-                ctx.fillRect(0, y, padding - 5, actualRowHeight - 2);
+                ctx.fillRect(0, y, leftPadding - 5, actualRowHeight - 2);
 
                 ctx.fillStyle = '#333';
                 ctx.font = 'bold 13px sans-serif';
                 ctx.textAlign = 'right';
-                ctx.fillText(type, padding - 10, y + actualRowHeight / 2 + 5);
+                ctx.fillText(type, leftPadding - 10, y + actualRowHeight / 2 + 5);
             });
 
             events.forEach(event => {
@@ -1475,8 +1495,8 @@
                 const scaledStartTime = (eventStartTime - startTime) / timeScale;
                 const scaledEndTime = (eventEndTime - startTime) / timeScale;
 
-                const x1 = padding + (scaledStartTime / scaledTimeRange) * chartWidth;
-                const x2 = padding + (scaledEndTime / scaledTimeRange) * chartWidth;
+                const x1 = leftPadding + (scaledStartTime / scaledTimeRange) * chartWidth;
+                const x2 = leftPadding + (scaledEndTime / scaledTimeRange) * chartWidth;
 
                 const typeIndex = eventTypes.indexOf(event.type);
                 const y = chartTop + (typeIndex * actualRowHeight);
@@ -1486,14 +1506,19 @@
                 const color = eventColors[event.type] || '#999';
 
                 if (event.endTime && event.startTime !== event.endTime) {
+                    const rectX = x1;
+                    const rectY = y + 5;
+                    const rectWidth = Math.max(x2 - x1, 2);
+                    const rectHeight = barHeight;
+
                     ctx.fillStyle = color;
                     ctx.globalAlpha = event.isActive ? 0.7 : 0.5;
-                    ctx.fillRect(x1, y + 5, Math.max(x2 - x1, 2), barHeight);
+                    ctx.fillRect(rectX, rectY, rectWidth, rectHeight);
                     ctx.globalAlpha = 1;
 
                     ctx.strokeStyle = color;
                     ctx.lineWidth = 2;
-                    ctx.strokeRect(x1, y + 5, Math.max(x2 - x1, 2), barHeight);
+                    ctx.strokeRect(rectX, rectY, rectWidth, rectHeight);
 
                     ctx.fillStyle = color;
                     ctx.beginPath();
@@ -1503,6 +1528,14 @@
                     ctx.beginPath();
                     ctx.arc(x2, y + actualRowHeight / 2, 5, 0, Math.PI * 2);
                     ctx.fill();
+
+                    timelineEventRects.push({
+                        x: rectX,
+                        y: rectY,
+                        width: rectWidth,
+                        height: rectHeight,
+                        event: event
+                    });
                 } else {
                     ctx.fillStyle = color;
                     ctx.beginPath();
@@ -1512,6 +1545,14 @@
                     ctx.strokeStyle = '#fff';
                     ctx.lineWidth = 2;
                     ctx.stroke();
+
+                    timelineEventRects.push({
+                        x: x1 - 6,
+                        y: y + actualRowHeight / 2 - 6,
+                        width: 12,
+                        height: 12,
+                        event: event
+                    });
                 }
             });
         }
@@ -1543,6 +1584,49 @@
             } else {
                 document.getElementById('timelineEndDate').style.display = 'none';
             }
+        });
+
+        const canvas = document.getElementById('timelineCanvas');
+        const tooltip = document.getElementById('timelineTooltip');
+
+        canvas.addEventListener('mousemove', function(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            let found = false;
+            for (const eventRect of timelineEventRects) {
+                if (x >= eventRect.x && x <= eventRect.x + eventRect.width &&
+                    y >= eventRect.y && y <= eventRect.y + eventRect.height) {
+
+                    const event = eventRect.event;
+                    const startTime = new Date(event.startTime || event.timestamp);
+                    const endTime = event.endTime ? new Date(event.endTime) : null;
+
+                    let tooltipText = `<strong>${event.type}</strong><br>`;
+                    tooltipText += `Start: ${startTime.toLocaleString()}<br>`;
+                    if (endTime) {
+                        tooltipText += `End: ${endTime.toLocaleString()}<br>`;
+                        tooltipText += `Duration: ${formatDuration(event.duration)}`;
+                    }
+
+                    tooltip.innerHTML = tooltipText;
+                    tooltip.style.display = 'block';
+                    tooltip.style.left = (e.pageX + 15) + 'px';
+                    tooltip.style.top = (e.pageY + 15) + 'px';
+
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                tooltip.style.display = 'none';
+            }
+        });
+
+        canvas.addEventListener('mouseleave', function() {
+            tooltip.style.display = 'none';
         });
 
         loadSettings();
