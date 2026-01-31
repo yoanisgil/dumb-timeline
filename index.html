@@ -905,7 +905,7 @@
                         <i class="material-icons left">arrow_back</i><span data-i18n="sessions">Sessions</span>
                     </button>
                     <div>
-                        <div style="font-size: 12px; opacity: 0.9;">Current Session</div>
+                        <div style="font-size: 12px; opacity: 0.9;" data-i18n="currentSession">Current Session</div>
                         <div id="sessionTitle" style="font-size: 20px; font-weight: 500; margin-top: 2px;">Event Tracker</div>
                     </div>
                 </div>
@@ -917,7 +917,7 @@
                 </div>
             </div>
 
-            <p class="grey-text">Start and stop events to track your activities</p>
+            <p class="grey-text" data-i18n="startStopEvents">Start and stop events to track your activities</p>
 
             <ul class="tabs tabs-fixed-width">
                 <li class="tab"><a href="#eventsTab" class="active" data-i18n="tracker">Tracker</a></li>
@@ -927,7 +927,7 @@
 
         <div id="eventsTab" class="tab-content active">
             <div class="available-events-panel">
-                <h2>📊 Event Tracker - Click to Start/Stop</h2>
+                <h2 data-i18n="eventTrackerTitle">📊 Event Tracker - Click to Start/Stop</h2>
                 <div class="event-buttons" id="eventButtons">
                 </div>
             </div>
@@ -1068,6 +1068,10 @@
                 startTracking: 'Start tracking events to see them here',
                 clickToStart: 'Click to Start',
                 running: 'Running',
+                no: 'No',
+                eventTrackerTitle: 'Event Tracker - Click to Start/Stop',
+                startStopEvents: 'Start and stop events to track your activities',
+                currentSession: 'Current Session',
                 exportToCSV: 'Export to CSV',
                 exportTimelineImage: 'Export Timeline Image',
                 resetAllEvents: 'Reset All Events',
@@ -1133,6 +1137,10 @@
                 startTracking: 'Commencez à suivre des événements pour les voir ici',
                 clickToStart: 'Cliquez pour Démarrer',
                 running: 'En cours',
+                no: 'Sans',
+                eventTrackerTitle: 'Suivi d\'Événements - Cliquez pour Démarrer/Arrêter',
+                startStopEvents: 'Démarrez et arrêtez des événements pour suivre vos activités',
+                currentSession: 'Session Actuelle',
                 exportToCSV: 'Exporter en CSV',
                 exportTimelineImage: 'Exporter l\'Image de la Chronologie',
                 resetAllEvents: 'Réinitialiser Tous les Événements',
@@ -1460,10 +1468,32 @@
             }
 
             container.innerHTML = eventTypes.map((eventType, index) => {
-                const complementaryOptions = eventTypes
-                    .filter((_, i) => i !== index)
-                    .map(et => `<option value="${et.name}" ${eventType.complementary === et.name ? 'selected' : ''}>${et.name}</option>`)
-                    .join('');
+                const isComplementary = eventType.isComplementary || false;
+                const showingDeleteConfirm = deleteEventTypeIndex === index;
+
+                if (showingDeleteConfirm) {
+                    return `
+                        <div class="card-panel red lighten-5" style="padding: 20px; margin-bottom: 15px; border-left: 4px solid #f44336;">
+                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                <div>
+                                    <p style="margin: 0; font-weight: 500; color: #f44336;">
+                                        <i class="material-icons" style="vertical-align: middle; font-size: 20px;">warning</i>
+                                        Delete "${eventType.name}"?
+                                    </p>
+                                    <p style="margin: 5px 0 0 0; font-size: 14px; color: #666;">This action cannot be undone.</p>
+                                </div>
+                                <div style="display: flex; gap: 10px;">
+                                    <button class="btn-small waves-effect waves-light grey" onclick="cancelDeleteEventType()" style="margin: 0;">
+                                        Cancel
+                                    </button>
+                                    <button class="btn-small waves-effect waves-light red" onclick="confirmDeleteEventType()" style="margin: 0;">
+                                        <i class="material-icons left">delete</i>Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
 
                 return `
                     <div class="card-panel" style="padding: 20px; margin-bottom: 15px;">
@@ -1485,18 +1515,20 @@
                                        onchange="updateGlobalEventTypeColor(${index}, this.value)">
                             </div>
                             <div class="col s12 m4 l4">
-                                <label style="font-size: 12px; color: #9e9e9e; display: block; margin-bottom: 5px;">Complementary Event</label>
-                                <select class="browser-default"
-                                        style="width: 100%; padding: 6px 8px; border: 1px solid #e0e0e0; border-radius: 4px; font-size: 14px; height: 32px; box-sizing: border-box; background-color: white;"
-                                        onchange="updateGlobalEventTypeComplementary(${index}, this.value)">
-                                    <option value="">None</option>
-                                    ${complementaryOptions}
-                                </select>
+                                <label style="font-size: 12px; color: #9e9e9e; display: block; margin-bottom: 5px;">
+                                    <input type="checkbox"
+                                           class="filled-in"
+                                           id="complementary-${index}"
+                                           ${isComplementary ? 'checked' : ''}
+                                           onchange="updateGlobalEventTypeComplementary(${index}, this.checked)">
+                                    <span>Complementary Event</span>
+                                </label>
+                                <p style="font-size: 11px; color: #9e9e9e; margin: 5px 0 0 0;">Creates a mutually exclusive "${t('no')} ${eventType.name}" variant</p>
                             </div>
                             <div class="col s6 m1 l2" style="text-align: center;">
                                 <label style="font-size: 12px; color: transparent; display: block; margin-bottom: 5px;">.</label>
                                 <button class="btn-small waves-effect waves-light red"
-                                        onclick="deleteGlobalEventType(${index})"
+                                        onclick="showDeleteEventTypeConfirmation(${index})"
                                         style="margin: 0;">
                                     <i class="material-icons">delete</i>
                                 </button>
@@ -1509,7 +1541,7 @@
 
         function addGlobalEventType() {
             const eventTypes = getEventTypes();
-            eventTypes.push({ name: 'New Event', color: '#999999', complementary: null });
+            eventTypes.push({ name: 'New Event', color: '#999999', isComplementary: false });
             saveEventTypesToStorage(eventTypes);
             renderGlobalEventTypes();
         }
@@ -1517,17 +1549,12 @@
         function updateGlobalEventTypeName(index, newName) {
             const eventTypes = getEventTypes();
             if (eventTypes[index]) {
-                const oldName = eventTypes[index].name;
                 eventTypes[index].name = newName;
-
-                eventTypes.forEach(et => {
-                    if (et.complementary === oldName) {
-                        et.complementary = newName;
-                    }
-                });
-
                 saveEventTypesToStorage(eventTypes);
                 renderGlobalEventTypes();
+                if (currentSessionId) {
+                    renderEventButtons();
+                }
             }
         }
 
@@ -1539,37 +1566,40 @@
             }
         }
 
-        function updateGlobalEventTypeComplementary(index, complementaryName) {
+        function updateGlobalEventTypeComplementary(index, isChecked) {
             const eventTypes = getEventTypes();
             if (eventTypes[index]) {
-                eventTypes[index].complementary = complementaryName || null;
-
-                if (complementaryName) {
-                    const complementaryIndex = eventTypes.findIndex(e => e.name === complementaryName);
-                    if (complementaryIndex !== -1) {
-                        eventTypes[complementaryIndex].complementary = eventTypes[index].name;
-                    }
-                }
-
+                eventTypes[index].isComplementary = isChecked;
                 saveEventTypesToStorage(eventTypes);
                 renderGlobalEventTypes();
+                if (currentSessionId) {
+                    renderEventButtons();
+                }
             }
         }
 
-        function deleteGlobalEventType(index) {
+        let deleteEventTypeIndex = null;
+
+        function showDeleteEventTypeConfirmation(index) {
+            deleteEventTypeIndex = index;
+            renderGlobalEventTypes();
+        }
+
+        function cancelDeleteEventType() {
+            deleteEventTypeIndex = null;
+            renderGlobalEventTypes();
+        }
+
+        function confirmDeleteEventType() {
+            if (deleteEventTypeIndex === null) return;
+
             const eventTypes = getEventTypes();
-            const eventType = eventTypes[index];
-
-            if (confirm(`Delete "${eventType.name}"? This cannot be undone.`)) {
-                eventTypes.forEach(et => {
-                    if (et.complementary === eventType.name) {
-                        et.complementary = null;
-                    }
-                });
-
-                eventTypes.splice(index, 1);
-                saveEventTypesToStorage(eventTypes);
-                renderGlobalEventTypes();
+            eventTypes.splice(deleteEventTypeIndex, 1);
+            saveEventTypesToStorage(eventTypes);
+            deleteEventTypeIndex = null;
+            renderGlobalEventTypes();
+            if (currentSessionId) {
+                renderEventButtons();
             }
         }
 
@@ -1614,8 +1644,27 @@
 
         function getComplementaryEvent(eventTypeName) {
             const eventTypes = getEventTypes();
-            const eventType = eventTypes.find(e => e.name === eventTypeName);
-            return eventType?.complementary || null;
+            const noPrefix = `${t('no')} `;
+
+            let eventType;
+            let isNoVariant = false;
+
+            if (eventTypeName.startsWith(noPrefix)) {
+                const baseName = eventTypeName.substring(noPrefix.length);
+                eventType = eventTypes.find(e => e.name === baseName);
+                isNoVariant = true;
+            } else {
+                eventType = eventTypes.find(e => e.name === eventTypeName);
+                isNoVariant = false;
+            }
+
+            if (!eventType || !eventType.isComplementary) return null;
+
+            if (isNoVariant) {
+                return eventType.name;
+            } else {
+                return `${noPrefix}${eventType.name}`;
+            }
         }
 
         function toggleEvent(eventType) {
@@ -1689,8 +1738,13 @@
         }
 
         function getEvents() {
-            if (!currentSessionId) return [];
-            const stored = localStorage.getItem(getSessionStorageKey('events'));
+            if (!currentSessionId) {
+                console.log('getEvents: No current session ID');
+                return [];
+            }
+            const key = getSessionStorageKey('events');
+            const stored = localStorage.getItem(key);
+            console.log('getEvents: key =', key, 'stored =', stored);
             return stored ? JSON.parse(stored) : [];
         }
 
@@ -1749,14 +1803,14 @@
                 return {
                     timeScale: globalSettings.timeScale || 1,
                     timelineDate: new Date().toISOString().split('T')[0],
-                    timelineView: 'day',
+                    timelineView: 'range',
                     timelineEndDate: new Date().toISOString().split('T')[0]
                 };
             }
             const stored = localStorage.getItem(getSessionStorageKey('settings'));
             const sessionSettings = stored ? JSON.parse(stored) : {
                 timelineDate: new Date().toISOString().split('T')[0],
-                timelineView: 'day',
+                timelineView: 'range',
                 timelineEndDate: new Date().toISOString().split('T')[0]
             };
             return {
@@ -1780,12 +1834,16 @@
         }
 
         function loadTimelineSettings() {
+            console.log('=== loadTimelineSettings called ===');
             const settings = getSettings();
             const events = getEvents();
 
+            console.log('Settings:', settings);
+            console.log('Events for timeline:', events);
+
             let startDate = settings.timelineDate;
             let endDate = settings.timelineEndDate;
-            let viewMode = settings.timelineView;
+            let viewMode = settings.timelineView || 'range';
             let displayText = 'Showing all events';
 
             if (events.length > 0) {
@@ -1793,15 +1851,14 @@
                 const minDate = new Date(Math.min(...eventDates));
                 const maxDate = new Date(Math.max(...eventDates));
 
-                if (!settings.timelineDate || settings.timelineDate === new Date().toISOString().split('T')[0]) {
-                    startDate = minDate.toISOString().split('T')[0];
-                }
+                console.log('Event date range:', minDate, 'to', maxDate);
 
-                if (!settings.timelineEndDate || settings.timelineEndDate === new Date().toISOString().split('T')[0]) {
-                    endDate = maxDate.toISOString().split('T')[0];
-                }
+                startDate = minDate.toISOString().split('T')[0];
+                endDate = maxDate.toISOString().split('T')[0];
 
-                if (minDate.toDateString() !== maxDate.toDateString() && viewMode === 'day') {
+                console.log('Setting startDate:', startDate, 'endDate:', endDate);
+
+                if (minDate.toDateString() !== maxDate.toDateString()) {
                     viewMode = 'range';
                 }
 
@@ -1814,8 +1871,11 @@
                     displayText = `(${startDateObj.toLocaleDateString()} - ${endDateObj.toLocaleDateString()})`;
                 }
             } else {
+                console.log('No events found');
                 displayText = '(No events)';
             }
+
+            console.log('Final settings - viewMode:', viewMode, 'startDate:', startDate, 'endDate:', endDate);
 
             document.getElementById('timelineDate').value = startDate;
             document.getElementById('timelineView').value = viewMode;
@@ -1866,37 +1926,47 @@
 
             updateDynamicStyles(eventTypes);
 
-            container.innerHTML = eventTypes.map(eventType => {
-                const activeInstances = activeEvents.filter(e => e.type === eventType.name);
-                const isActive = activeInstances.length > 0;
-                const instanceCount = activeInstances.length;
-                const eventClass = getEventTypeClass(eventType.name);
+            const buttons = [];
 
-                let statusDisplay = t('clickToStart');
-                let icon = 'play_arrow';
+            eventTypes.forEach(eventType => {
+                const eventNames = eventType.isComplementary
+                    ? [eventType.name, `${t('no')} ${eventType.name}`]
+                    : [eventType.name];
 
-                if (isActive) {
-                    const oldestEvent = activeInstances[0];
-                    const duration = calculateDuration(oldestEvent.startTime);
-                    const formattedDuration = formatDuration(duration);
-                    statusDisplay = `${t('running')} (<span id="btn-duration-${eventClass}">${formattedDuration}</span>)`;
-                    icon = 'stop';
-                }
+                eventNames.forEach(eventName => {
+                    const activeInstances = activeEvents.filter(e => e.type === eventName);
+                    const isActive = activeInstances.length > 0;
+                    const instanceCount = activeInstances.length;
+                    const eventClass = getEventTypeClass(eventName);
 
-                const instanceBadge = instanceCount > 1 ? `<span class="new badge" data-badge-caption="">${instanceCount}</span>` : '';
+                    let statusDisplay = t('clickToStart');
+                    let icon = 'play_arrow';
 
-                return `
-                    <button class="btn-large waves-effect waves-light event-btn ${eventClass} ${isActive ? 'active' : ''}"
-                            onclick="toggleEvent('${eventType.name}')"
-                            style="width: 100%; margin-bottom: 15px; position: relative; text-align: left; display: flex; flex-direction: column; align-items: flex-start; padding: 20px;">
-                        ${instanceBadge}
-                        <div class="event-btn-label" style="display: flex; align-items: center; font-size: 18px; font-weight: 500;">
-                            <i class="material-icons left">${icon}</i>${eventType.name}
-                        </div>
-                        <div class="event-btn-status" style="font-size: 14px; opacity: 0.9; margin-top: 5px;">${statusDisplay}</div>
-                    </button>
-                `;
-            }).join('');
+                    if (isActive) {
+                        const oldestEvent = activeInstances[0];
+                        const duration = calculateDuration(oldestEvent.startTime);
+                        const formattedDuration = formatDuration(duration);
+                        statusDisplay = `${t('running')} (<span id="btn-duration-${eventClass}">${formattedDuration}</span>)`;
+                        icon = 'stop';
+                    }
+
+                    const instanceBadge = instanceCount > 1 ? `<span class="new badge" data-badge-caption="">${instanceCount}</span>` : '';
+
+                    buttons.push(`
+                        <button class="btn-large waves-effect waves-light event-btn ${eventClass} ${isActive ? 'active' : ''}"
+                                onclick="toggleEvent('${eventName.replace(/'/g, "\\'")}')"
+                                style="width: 100%; margin-bottom: 15px; position: relative; text-align: left; display: flex; flex-direction: column; align-items: flex-start; padding: 20px;">
+                            ${instanceBadge}
+                            <div class="event-btn-label" style="display: flex; align-items: center; font-size: 18px; font-weight: 500;">
+                                <i class="material-icons left">${icon}</i>${eventName}
+                            </div>
+                            <div class="event-btn-status" style="font-size: 14px; opacity: 0.9; margin-top: 5px;">${statusDisplay}</div>
+                        </button>
+                    `);
+                });
+            });
+
+            container.innerHTML = buttons.join('');
         }
 
         function updateDynamicStyles(eventTypes) {
@@ -1907,12 +1977,19 @@
                 document.head.appendChild(styleElement);
             }
 
-            const styles = eventTypes.map(eventType => {
-                const eventClass = getEventTypeClass(eventType.name);
-                return `.event-btn.${eventClass} { background: ${eventType.color}; }`;
-            }).join('\n');
+            const styles = [];
+            eventTypes.forEach(eventType => {
+                const eventNames = eventType.isComplementary
+                    ? [eventType.name, `${t('no')} ${eventType.name}`]
+                    : [eventType.name];
 
-            styleElement.textContent = styles;
+                eventNames.forEach(eventName => {
+                    const eventClass = getEventTypeClass(eventName);
+                    styles.push(`.event-btn.${eventClass} { background: ${eventType.color}; }`);
+                });
+            });
+
+            styleElement.textContent = styles.join('\n');
         }
 
         function displayEvents() {
@@ -1950,6 +2027,33 @@
                 const startTime = new Date(event.startTime).toLocaleString();
                 const endTime = event.endTime ? new Date(event.endTime).toLocaleString() : 'N/A';
                 const duration = event.duration ? formatDuration(event.duration) : 'N/A';
+                const showingDeleteConfirm = deleteEventId === event.id;
+
+                if (showingDeleteConfirm) {
+                    return `
+                        <tr style="background-color: #ffebee;">
+                            <td colspan="5" style="padding: 15px;">
+                                <div style="display: flex; align-items: center; justify-content: space-between;">
+                                    <div>
+                                        <p style="margin: 0; font-weight: 500; color: #f44336;">
+                                            <i class="material-icons" style="vertical-align: middle; font-size: 20px;">warning</i>
+                                            Delete this event?
+                                        </p>
+                                        <p style="margin: 5px 0 0 0; font-size: 14px; color: #666;">This action cannot be undone.</p>
+                                    </div>
+                                    <div style="display: flex; gap: 10px;">
+                                        <button class="btn-small waves-effect waves-light grey" onclick="cancelDeleteEvent()">
+                                            Cancel
+                                        </button>
+                                        <button class="btn-small waves-effect waves-light red" onclick="confirmDeleteEvent()">
+                                            <i class="material-icons left">delete</i>Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }
 
                 return `
                     <tr>
@@ -1962,7 +2066,7 @@
                         <td>${duration}</td>
                         <td class="center-align">
                             <button type="button" class="btn-small waves-effect waves-light red"
-                                    onclick="deleteEvent('${event.id}')">
+                                    onclick="showDeleteEventConfirmation('${event.id}')">
                                 <i class="material-icons">delete</i>
                             </button>
                         </td>
@@ -1983,16 +2087,22 @@
 
                 const eventTypes = getEventTypes();
                 eventTypes.forEach(eventType => {
-                    const activeInstances = activeEvents.filter(e => e.type === eventType.name);
-                    if (activeInstances.length > 0) {
-                        const oldestEvent = activeInstances[0];
-                        const duration = calculateDuration(oldestEvent.startTime);
-                        const eventClass = getEventTypeClass(eventType.name);
-                        const durationElement = document.getElementById(`btn-duration-${eventClass}`);
-                        if (durationElement) {
-                            durationElement.textContent = formatDuration(duration);
+                    const eventNames = eventType.isComplementary
+                        ? [eventType.name, `${t('no')} ${eventType.name}`]
+                        : [eventType.name];
+
+                    eventNames.forEach(eventName => {
+                        const activeInstances = activeEvents.filter(e => e.type === eventName);
+                        if (activeInstances.length > 0) {
+                            const oldestEvent = activeInstances[0];
+                            const duration = calculateDuration(oldestEvent.startTime);
+                            const eventClass = getEventTypeClass(eventName);
+                            const durationElement = document.getElementById(`btn-duration-${eventClass}`);
+                            if (durationElement) {
+                                durationElement.textContent = formatDuration(duration);
+                            }
                         }
-                    }
+                    });
                 });
 
                 displayEvents();
@@ -2053,17 +2163,29 @@
             showToast(t('csvExported'));
         }
 
-        function deleteEvent(eventId) {
-            if (!currentSessionId) return;
-            if (confirm('Are you sure you want to delete this event?')) {
-                const events = getEvents();
-                const updatedEvents = events.filter(e => e.id !== eventId);
-                localStorage.setItem(getSessionStorageKey('events'), JSON.stringify(updatedEvents));
-                displayEvents();
-                generateTimeline();
-                updateSessionTimestamp(currentSessionId);
-                M.toast({html: 'Event deleted', displayLength: 2000});
-            }
+        let deleteEventId = null;
+
+        function showDeleteEventConfirmation(eventId) {
+            deleteEventId = eventId;
+            displayEvents();
+        }
+
+        function cancelDeleteEvent() {
+            deleteEventId = null;
+            displayEvents();
+        }
+
+        function confirmDeleteEvent() {
+            if (!currentSessionId || deleteEventId === null) return;
+
+            const events = getEvents();
+            const updatedEvents = events.filter(e => e.id !== deleteEventId);
+            localStorage.setItem(getSessionStorageKey('events'), JSON.stringify(updatedEvents));
+            deleteEventId = null;
+            displayEvents();
+            generateTimeline();
+            updateSessionTimestamp(currentSessionId);
+            M.toast({html: 'Event deleted', displayLength: 2000});
         }
 
         function showResetConfirmationModal() {
@@ -2102,6 +2224,11 @@
             const colors = {};
             eventTypes.forEach(eventType => {
                 colors[eventType.name] = eventType.color;
+                if (eventType.isComplementary) {
+                    colors[`${t('no')} ${eventType.name}`] = eventType.color;
+                    colors[`No ${eventType.name}`] = eventType.color;
+                    colors[`Sans ${eventType.name}`] = eventType.color;
+                }
             });
             return colors;
         }
@@ -2111,8 +2238,11 @@
         }
 
         function generateTimeline() {
+            console.log('=== generateTimeline called ===');
             const events = getEvents();
             const activeEvents = getActiveEvents();
+            console.log('Events:', events);
+            console.log('Active events:', activeEvents);
 
             const allEvents = [...events];
             activeEvents.forEach(active => {
@@ -2124,7 +2254,10 @@
                 });
             });
 
+            console.log('All events combined:', allEvents);
+
             if (allEvents.length === 0) {
+                console.log('No events to display');
                 showToast(t('noEventsToDisplay'));
                 return;
             }
@@ -2132,6 +2265,10 @@
             const viewType = document.getElementById('timelineView').value;
             const dateInput = document.getElementById('timelineDate');
             const endDateInput = document.getElementById('timelineEndDate');
+
+            console.log('View type:', viewType);
+            console.log('Date input value:', dateInput.value);
+            console.log('End date input value:', endDateInput.value);
 
             const canvas = document.getElementById('timelineCanvas');
             const ctx = canvas.getContext('2d');
@@ -2174,27 +2311,40 @@
             let startTime, endTime;
 
             if (viewType === 'day') {
-                const selectedDate = new Date(dateInput.value);
-                const dayStart = new Date(selectedDate.setHours(0, 0, 0, 0));
-                const dayEnd = new Date(selectedDate.setHours(23, 59, 59, 999));
+                const selectedDate = new Date(dateInput.value + 'T00:00:00');
+                const dayStart = new Date(selectedDate);
+                dayStart.setHours(0, 0, 0, 0);
+                const dayEnd = new Date(selectedDate);
+                dayEnd.setHours(23, 59, 59, 999);
+
+                console.log('Day view - filtering from', dayStart, 'to', dayEnd);
 
                 filteredEvents = allEvents.filter(e => {
                     const eventTime = new Date(e.startTime || e.timestamp);
+                    console.log('Event time:', eventTime, 'in range?', eventTime >= dayStart && eventTime <= dayEnd);
                     return eventTime >= dayStart && eventTime <= dayEnd;
                 });
             } else {
-                const startDate = new Date(dateInput.value);
-                const endDate = new Date(endDateInput.value);
-                const rangeStart = new Date(startDate.setHours(0, 0, 0, 0));
-                const rangeEnd = new Date(endDate.setHours(23, 59, 59, 999));
+                const startDate = new Date(dateInput.value + 'T00:00:00');
+                const endDate = new Date(endDateInput.value + 'T00:00:00');
+                const rangeStart = new Date(startDate);
+                rangeStart.setHours(0, 0, 0, 0);
+                const rangeEnd = new Date(endDate);
+                rangeEnd.setHours(23, 59, 59, 999);
+
+                console.log('Range view - filtering from', rangeStart, 'to', rangeEnd);
 
                 filteredEvents = allEvents.filter(e => {
                     const eventTime = new Date(e.startTime || e.timestamp);
+                    console.log('Event time:', eventTime, 'in range?', eventTime >= rangeStart && eventTime <= rangeEnd);
                     return eventTime >= rangeStart && eventTime <= rangeEnd;
                 });
             }
 
+            console.log('Filtered events:', filteredEvents);
+
             if (filteredEvents.length === 0) {
+                console.log('No filtered events - showing message on canvas');
                 ctx.fillStyle = '#999';
                 ctx.font = '16px sans-serif';
                 ctx.textAlign = 'center';
@@ -2297,8 +2447,50 @@
                 ctx.fillText(label, x, chartTop + chartHeight + 20);
             }
 
+            // Group complementary events together
             const eventTypes = [...new Set(events.map(e => e.type))];
-            const totalRows = eventTypes.length;
+            const globalEventTypes = getEventTypes();
+            const noPrefix = `${t('no')} `;
+
+            // Create ordered list of event type rows, grouping complementary pairs
+            const eventTypeRows = [];
+            const processedTypes = new Set();
+
+            eventTypes.forEach(type => {
+                if (processedTypes.has(type)) return;
+
+                // Check if this is a "No" variant
+                let baseType = type;
+                let isNoVariant = false;
+                if (type.startsWith(noPrefix)) {
+                    baseType = type.substring(noPrefix.length);
+                    isNoVariant = true;
+                }
+
+                // Find the global event type definition
+                const globalType = globalEventTypes.find(et => et.name === baseType);
+
+                if (globalType && globalType.isComplementary) {
+                    // Add both the base and "No" variant in order
+                    const baseEventName = globalType.name;
+                    const noEventName = `${noPrefix}${globalType.name}`;
+
+                    if (eventTypes.includes(baseEventName)) {
+                        eventTypeRows.push(baseEventName);
+                        processedTypes.add(baseEventName);
+                    }
+                    if (eventTypes.includes(noEventName)) {
+                        eventTypeRows.push(noEventName);
+                        processedTypes.add(noEventName);
+                    }
+                } else {
+                    // Non-complementary event, just add it
+                    eventTypeRows.push(type);
+                    processedTypes.add(type);
+                }
+            });
+
+            const totalRows = eventTypeRows.length;
 
             // Calculate row height to distribute events evenly and center them
             const minRowHeight = 35;
@@ -2312,7 +2504,7 @@
             // Calculate vertical offset to center the content
             const verticalOffset = (chartHeight - totalContentHeight) / 2;
 
-            eventTypes.forEach((type, index) => {
+            eventTypeRows.forEach((type, index) => {
                 const y = chartTop + verticalOffset + (index * actualRowHeight);
 
                 ctx.fillStyle = '#fff';
@@ -2334,7 +2526,7 @@
                 const x1 = leftPadding + (scaledStartTime / scaledTimeRange) * chartWidth;
                 const x2 = leftPadding + (scaledEndTime / scaledTimeRange) * chartWidth;
 
-                const typeIndex = eventTypes.indexOf(event.type);
+                const typeIndex = eventTypeRows.indexOf(event.type);
                 const y = chartTop + verticalOffset + (typeIndex * actualRowHeight);
                 const barHeight = actualRowHeight - 10;
 
