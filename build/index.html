@@ -805,15 +805,15 @@
                 <div class="sidebar">
                     <div class="sidebar-menu-item active" onclick="switchLandingSection('sessions')">
                         <i class="material-icons">folder</i>
-                        <span>Tracking Sessions</span>
+                        <span data-i18n="trackingSessions">Tracking Sessions</span>
                     </div>
                     <div class="sidebar-menu-item" onclick="switchLandingSection('eventTypes')">
                         <i class="material-icons">label</i>
-                        <span>Event Types</span>
+                        <span data-i18n="eventTypes">Event Types</span>
                     </div>
                     <div class="sidebar-menu-item" onclick="switchLandingSection('settings')">
                         <i class="material-icons">settings</i>
-                        <span>Global Settings</span>
+                        <span data-i18n="globalSettings">Global Settings</span>
                     </div>
                 </div>
 
@@ -823,20 +823,20 @@
                     <div id="sessionsSection" class="landing-section active">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                             <div>
-                                <h4 class="grey-text text-darken-3" style="margin: 0;"><i class="material-icons left">folder</i>Tracking Sessions</h4>
-                                <p class="grey-text" style="margin: 5px 0 0 0;">Manage your tracking sessions</p>
+                                <h4 class="grey-text text-darken-3" style="margin: 0;"><i class="material-icons left">folder</i><span data-i18n="trackingSessions">Tracking Sessions</span></h4>
+                                <p class="grey-text" style="margin: 5px 0 0 0;" data-i18n="manageYourSessions">Manage your tracking sessions</p>
                             </div>
                             <button class="btn waves-effect waves-light deep-purple" onclick="createNewSession()">
-                                <i class="material-icons left">add</i>New Session
+                                <i class="material-icons left">add</i><span data-i18n="newSession">New Session</span>
                             </button>
                         </div>
                         <table class="striped highlight responsive-table">
                             <thead>
                                 <tr>
-                                    <th>Session Name</th>
-                                    <th>Created</th>
-                                    <th>Last Modified</th>
-                                    <th class="center-align">Actions</th>
+                                    <th data-i18n="sessionName">Session Name</th>
+                                    <th data-i18n="created">Created</th>
+                                    <th data-i18n="lastModified">Last Modified</th>
+                                    <th class="center-align" data-i18n="actions">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="sessionTableBody">
@@ -845,28 +845,39 @@
                         </table>
                         <div id="emptySessionsMessage" style="display: none; text-align: center; padding: 60px 20px;">
                             <i class="material-icons grey-text" style="font-size: 64px;">folder_open</i>
-                            <p class="grey-text" style="font-size: 18px; margin-top: 20px;">No tracking sessions yet</p>
-                            <p class="grey-text" style="font-size: 14px;">Click "New Session" to create your first tracking session</p>
+                            <p class="grey-text" style="font-size: 18px; margin-top: 20px;" data-i18n="noSessionsYet">No tracking sessions yet</p>
+                            <p class="grey-text" style="font-size: 14px;" data-i18n="createFirstSession">Click "New Session" to create your first tracking session</p>
                         </div>
                     </div>
 
                     <!-- Event Types Section -->
                     <div id="eventTypesSection" class="landing-section">
-                        <h4 class="grey-text text-darken-3"><i class="material-icons left">label</i>Event Types</h4>
-                        <p class="grey-text">Define the types of events you want to track across all sessions</p>
+                        <h4 class="grey-text text-darken-3"><i class="material-icons left">label</i><span data-i18n="eventTypes">Event Types</span></h4>
+                        <p class="grey-text" data-i18n="defineEventTypes">Define the types of events you want to track across all sessions</p>
                         <div class="event-types-list" id="globalEventTypesList" style="margin-top: 30px;"></div>
                         <button class="btn waves-effect waves-light deep-purple" onclick="addGlobalEventType()" style="margin-top: 20px;">
-                            <i class="material-icons left">add</i>Add Event Type
+                            <i class="material-icons left">add</i><span data-i18n="addEventType">Add Event Type</span>
                         </button>
                     </div>
 
                     <!-- Global Settings Section -->
                     <div id="settingsSection" class="landing-section">
-                        <h4 class="grey-text text-darken-3"><i class="material-icons left">settings</i>Global Settings</h4>
-                        <p class="grey-text">Configure global application settings</p>
+                        <h4 class="grey-text text-darken-3"><i class="material-icons left">settings</i><span data-i18n="globalSettings">Global Settings</span></h4>
+                        <p class="grey-text" data-i18n="configureGlobalSettings">Configure global application settings</p>
                         <div style="margin-top: 30px;">
-                            <h6>Timeline Time Scale</h6>
-                            <p class="grey-text" style="font-size: 14px; margin-bottom: 15px;">Compress or expand the timeline visualization</p>
+                            <h6>Language / Langue</h6>
+                            <p class="grey-text" style="font-size: 14px; margin-bottom: 15px;">Select your preferred language / Sélectionnez votre langue</p>
+                            <div class="input-field">
+                                <select id="globalLanguageSetting" onchange="saveGlobalLanguage()">
+                                    <option value="en">English</option>
+                                    <option value="fr">Français</option>
+                                </select>
+                                <label>Language / Langue</label>
+                            </div>
+                        </div>
+                        <div style="margin-top: 30px;">
+                            <h6 data-i18n="timelineTimeScale">Timeline Time Scale</h6>
+                            <p class="grey-text" style="font-size: 14px; margin-bottom: 15px;" data-i18n="compressExpandTimeline">Compress or expand the timeline visualization</p>
                             <div class="input-field">
                                 <select id="globalTimeScaleSetting" onchange="saveGlobalTimeScale()">
                                     <option value="1">1:1 (Real-time - 1 second = 1 second)</option>
@@ -877,7 +888,7 @@
                                     <option value="1800">1:1800 (30 minutes = 1 second)</option>
                                     <option value="3600">1:3600 (1 hour = 1 second)</option>
                                 </select>
-                                <label>Select Time Scale</label>
+                                <label data-i18n="selectTimeScale">Select Time Scale</label>
                             </div>
                         </div>
                     </div>
@@ -891,7 +902,7 @@
             <div style="background: #7c3aed; color: white; padding: 15px 20px; margin: -30px -30px 30px -30px; display: flex; align-items: center; justify-content: space-between;">
                 <div style="display: flex; align-items: center; gap: 15px;">
                     <button type="button" class="btn waves-effect waves-light white deep-purple-text" onclick="backToLanding()" style="margin: 0;">
-                        <i class="material-icons left">arrow_back</i>Sessions
+                        <i class="material-icons left">arrow_back</i><span data-i18n="sessions">Sessions</span>
                     </button>
                     <div>
                         <div style="font-size: 12px; opacity: 0.9;">Current Session</div>
@@ -909,9 +920,9 @@
             <p class="grey-text">Start and stop events to track your activities</p>
 
             <ul class="tabs tabs-fixed-width">
-                <li class="tab"><a href="#eventsTab" class="active">Tracker</a></li>
-                <li class="tab"><a href="#timelineTab">Timeline</a></li>
-                <li class="tab"><a href="#historyTab">History</a></li>
+                <li class="tab"><a href="#eventsTab" class="active" data-i18n="tracker">Tracker</a></li>
+                <li class="tab"><a href="#timelineTab" data-i18n="timeline">Timeline</a></li>
+                <li class="tab"><a href="#historyTab" data-i18n="history">History</a></li>
             </ul>
 
         <div id="eventsTab" class="tab-content active">
@@ -923,16 +934,16 @@
         </div>
 
         <div id="historyTab" class="tab-content">
-            <h5 class="grey-text text-darken-2">Event History</h5>
+            <h5 class="grey-text text-darken-2" data-i18n="history">Event History</h5>
             <p class="grey-text">View all completed events</p>
             <table class="striped highlight responsive-table" style="margin-top: 20px;">
                 <thead>
                     <tr>
-                        <th>Event Type</th>
-                        <th>Start Time</th>
-                        <th>End Time</th>
-                        <th>Duration</th>
-                        <th class="center-align">Actions</th>
+                        <th data-i18n="eventType">Event Type</th>
+                        <th data-i18n="startTime">Start Time</th>
+                        <th data-i18n="endTime">End Time</th>
+                        <th data-i18n="duration">Duration</th>
+                        <th class="center-align" data-i18n="actions">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="eventsTableBody">
@@ -941,8 +952,8 @@
             </table>
             <div id="emptyEventsMessage" style="display: none; text-align: center; padding: 60px 20px;">
                 <i class="material-icons grey-text" style="font-size: 64px;">event_note</i>
-                <p class="grey-text" style="font-size: 18px; margin-top: 20px;">No events recorded yet</p>
-                <p class="grey-text" style="font-size: 14px;">Start tracking events to see them here</p>
+                <p class="grey-text" style="font-size: 18px; margin-top: 20px;" data-i18n="noEventsRecorded">No events recorded yet</p>
+                <p class="grey-text" style="font-size: 14px;" data-i18n="startTracking">Start tracking events to see them here</p>
             </div>
         </div>
 
@@ -970,40 +981,40 @@
     <!-- New Session Modal -->
     <div id="newSessionModal" class="modal">
         <div class="modal-content">
-            <h4><i class="material-icons left">add</i>Create New Session</h4>
-            <p>Enter a name for your new tracking session</p>
+            <h4><i class="material-icons left">add</i><span data-i18n="newSession">Create New Session</span></h4>
+            <p data-i18n="enterSessionName">Enter a name for your new tracking session</p>
             <div class="input-field">
-                <input id="newSessionName" type="text" class="validate" onkeypress="if(event.key==='Enter') confirmCreateSession()">
-                <label for="newSessionName">Session Name</label>
+                <input id="newSessionName" type="text" class="validate" onkeypress="if(event.key==='Enter') confirmCreateSession()" data-i18n="sessionName">
+                <label for="newSessionName" data-i18n="sessionName">Session Name</label>
             </div>
         </div>
         <div class="modal-footer">
-            <a href="#!" class="modal-close waves-effect waves-light btn-flat">Cancel</a>
+            <a href="#!" class="modal-close waves-effect waves-light btn-flat" data-i18n="cancel">Cancel</a>
             <a href="#!" class="waves-effect waves-light btn deep-purple" onclick="confirmCreateSession()">
-                <i class="material-icons left">check</i>Create
+                <i class="material-icons left">check</i><span data-i18n="create">Create</span>
             </a>
         </div>
     </div>
 
     <!-- Session Actions Dropdown -->
     <ul id="sessionActionsDropdown" class="dropdown-content">
-        <li><a href="#!" onclick="exportCSV()"><i class="material-icons left">file_download</i>Export to CSV</a></li>
-        <li><a href="#!" onclick="downloadTimeline()"><i class="material-icons left">image</i>Export Timeline Image</a></li>
+        <li><a href="#!" onclick="exportCSV()"><i class="material-icons left">file_download</i><span data-i18n="exportToCSV">Export to CSV</span></a></li>
+        <li><a href="#!" onclick="downloadTimeline()"><i class="material-icons left">image</i><span data-i18n="exportTimelineImage">Export Timeline Image</span></a></li>
         <li class="divider"></li>
-        <li><a href="#!" onclick="showResetConfirmationModal()" class="red-text"><i class="material-icons left red-text">delete_forever</i>Reset All Events</a></li>
+        <li><a href="#!" onclick="showResetConfirmationModal()" class="red-text"><i class="material-icons left red-text">delete_forever</i><span data-i18n="resetAllEvents">Reset All Events</span></a></li>
     </ul>
 
     <!-- Reset Confirmation Modal -->
     <div id="resetConfirmModal" class="modal">
         <div class="modal-content">
-            <h4 style="color: #f44336;"><i class="material-icons left">warning</i>Reset All Events?</h4>
-            <p style="font-size: 16px;">This will stop all active events and permanently delete all event data for this session.</p>
-            <p style="font-weight: 500; color: #f44336;">This action cannot be undone!</p>
+            <h4 style="color: #f44336;"><i class="material-icons left">warning</i><span data-i18n="resetAllEventsQuestion">Reset All Events?</span></h4>
+            <p style="font-size: 16px;" data-i18n="resetWarning">This will stop all active events and permanently delete all event data for this session.</p>
+            <p style="font-weight: 500; color: #f44336;" data-i18n="cannotBeUndone">This action cannot be undone!</p>
         </div>
         <div class="modal-footer">
-            <a href="#!" class="modal-close waves-effect waves-light btn-flat">Cancel</a>
+            <a href="#!" class="modal-close waves-effect waves-light btn-flat" data-i18n="cancel">Cancel</a>
             <a href="#!" class="waves-effect waves-light btn red" onclick="confirmResetEventsModal()">
-                <i class="material-icons left">delete_forever</i>Yes, Reset All
+                <i class="material-icons left">delete_forever</i><span data-i18n="yesResetAll">Yes, Reset All</span>
             </a>
         </div>
     </div>
@@ -1015,6 +1026,169 @@
         let updateInterval;
 
         const DEFAULT_EVENT_TYPES = [];
+
+        const translations = {
+            en: {
+                sessions: 'Sessions',
+                trackingSessions: 'Tracking Sessions',
+                manageYourSessions: 'Manage your tracking sessions',
+                newSession: 'New Session',
+                settings: 'Settings',
+                globalSettings: 'Global Settings',
+                configureGlobalSettings: 'Configure global application settings',
+                language: 'Language',
+                selectLanguage: 'Select your preferred language',
+                timelineTimeScale: 'Timeline Time Scale',
+                compressExpandTimeline: 'Compress or expand the timeline visualization',
+                selectTimeScale: 'Select Time Scale',
+                sessionName: 'Session Name',
+                enterSessionName: 'Enter session name',
+                cancel: 'Cancel',
+                create: 'Create',
+                open: 'Open',
+                delete: 'Delete',
+                deleteSession: 'Delete Session',
+                deleteSessionConfirm: 'Are you sure you want to delete this session?',
+                noSessionsYet: 'No tracking sessions yet',
+                createFirstSession: 'Click "New Session" to create your first tracking session',
+                tracker: 'Tracker',
+                timeline: 'Timeline',
+                history: 'History',
+                eventType: 'Event Type',
+                eventTypes: 'Event Types',
+                defineEventTypes: 'Define the types of events you want to track across all sessions',
+                addEventType: 'Add Event Type',
+                startTime: 'Start Time',
+                endTime: 'End Time',
+                duration: 'Duration',
+                actions: 'Actions',
+                created: 'Created',
+                lastModified: 'Last Modified',
+                noEventsRecorded: 'No events recorded yet',
+                startTracking: 'Start tracking events to see them here',
+                clickToStart: 'Click to Start',
+                running: 'Running',
+                exportToCSV: 'Export to CSV',
+                exportTimelineImage: 'Export Timeline Image',
+                resetAllEvents: 'Reset All Events',
+                resetAllEventsQuestion: 'Reset All Events?',
+                resetWarning: 'This will stop all active events and permanently delete all event data for this session.',
+                cannotBeUndone: 'This action cannot be undone!',
+                yesResetAll: 'Yes, Reset All',
+                csvExported: 'CSV exported successfully!',
+                timelineDownloaded: 'Timeline downloaded!',
+                allEventsReset: 'All events have been reset!',
+                timeScaleUpdated: 'Time scale updated!',
+                languageUpdated: 'Language updated!',
+                sessionCreated: 'Session created!',
+                sessionDeleted: 'Session deleted!',
+                noEventsToDisplay: 'No events to display in timeline!',
+                noEventsFound: 'No events found for selected date/range',
+                warningActiveEvents: 'Warning: You have active events running!',
+                realTime: 'Real-time',
+                second: 'second',
+                seconds: 'seconds',
+                minute: 'minute',
+                minutes: 'minutes',
+                hour: 'hour',
+                hours: 'hours'
+            },
+            fr: {
+                sessions: 'Sessions',
+                trackingSessions: 'Sessions de Suivi',
+                manageYourSessions: 'Gérez vos sessions de suivi',
+                newSession: 'Nouvelle Session',
+                settings: 'Paramètres',
+                globalSettings: 'Paramètres Globaux',
+                configureGlobalSettings: 'Configurer les paramètres globaux de l\'application',
+                language: 'Langue',
+                selectLanguage: 'Sélectionnez votre langue',
+                timelineTimeScale: 'Échelle de Temps',
+                compressExpandTimeline: 'Compresser ou étendre la visualisation de la chronologie',
+                selectTimeScale: 'Sélectionner l\'Échelle de Temps',
+                sessionName: 'Nom de la Session',
+                enterSessionName: 'Entrez le nom de la session',
+                cancel: 'Annuler',
+                create: 'Créer',
+                open: 'Ouvrir',
+                delete: 'Supprimer',
+                deleteSession: 'Supprimer la Session',
+                deleteSessionConfirm: 'Êtes-vous sûr de vouloir supprimer cette session?',
+                noSessionsYet: 'Aucune session de suivi pour le moment',
+                createFirstSession: 'Cliquez sur "Nouvelle Session" pour créer votre première session de suivi',
+                tracker: 'Suivi',
+                timeline: 'Chronologie',
+                history: 'Historique',
+                eventType: 'Type d\'Événement',
+                eventTypes: 'Types d\'Événements',
+                defineEventTypes: 'Définissez les types d\'événements que vous souhaitez suivre dans toutes les sessions',
+                addEventType: 'Ajouter un Type d\'Événement',
+                startTime: 'Heure de Début',
+                endTime: 'Heure de Fin',
+                duration: 'Durée',
+                actions: 'Actions',
+                created: 'Créé',
+                lastModified: 'Dernière Modification',
+                noEventsRecorded: 'Aucun événement enregistré',
+                startTracking: 'Commencez à suivre des événements pour les voir ici',
+                clickToStart: 'Cliquez pour Démarrer',
+                running: 'En cours',
+                exportToCSV: 'Exporter en CSV',
+                exportTimelineImage: 'Exporter l\'Image de la Chronologie',
+                resetAllEvents: 'Réinitialiser Tous les Événements',
+                resetAllEventsQuestion: 'Réinitialiser Tous les Événements?',
+                resetWarning: 'Ceci arrêtera tous les événements actifs et supprimera définitivement toutes les données d\'événements pour cette session.',
+                cannotBeUndone: 'Cette action ne peut pas être annulée!',
+                yesResetAll: 'Oui, Tout Réinitialiser',
+                csvExported: 'CSV exporté avec succès!',
+                timelineDownloaded: 'Chronologie téléchargée!',
+                allEventsReset: 'Tous les événements ont été réinitialisés!',
+                timeScaleUpdated: 'Échelle de temps mise à jour!',
+                languageUpdated: 'Langue mise à jour!',
+                sessionCreated: 'Session créée!',
+                sessionDeleted: 'Session supprimée!',
+                noEventsToDisplay: 'Aucun événement à afficher dans la chronologie!',
+                noEventsFound: 'Aucun événement trouvé pour la date/plage sélectionnée',
+                warningActiveEvents: 'Attention: Vous avez des événements actifs en cours!',
+                realTime: 'Temps réel',
+                second: 'seconde',
+                seconds: 'secondes',
+                minute: 'minute',
+                minutes: 'minutes',
+                hour: 'heure',
+                hours: 'heures'
+            }
+        };
+
+        function t(key) {
+            const settings = getGlobalSettings();
+            const lang = settings.language || 'en';
+            return translations[lang][key] || translations.en[key] || key;
+        }
+
+        function updateUILanguage() {
+            document.querySelectorAll('[data-i18n]').forEach(element => {
+                const key = element.getAttribute('data-i18n');
+                if (element.tagName === 'INPUT' && element.placeholder !== undefined) {
+                    element.placeholder = t(key);
+                } else {
+                    element.textContent = t(key);
+                }
+            });
+
+            document.querySelectorAll('[data-i18n-html]').forEach(element => {
+                const key = element.getAttribute('data-i18n-html');
+                const icon = element.querySelector('i');
+                const iconHtml = icon ? icon.outerHTML : '';
+                element.innerHTML = iconHtml + t(key);
+            });
+
+            renderSessionList();
+            if (currentSessionId) {
+                renderEventButtons();
+                displayEvents();
+            }
+        }
 
         function getSessions() {
             const data = localStorage.getItem(SESSIONS_KEY);
@@ -1058,9 +1232,24 @@
             return currentSessionId ? `${currentSessionId}-${key}` : key;
         }
 
+        function detectBrowserLanguage() {
+            const browserLang = navigator.language || navigator.userLanguage;
+            if (browserLang.startsWith('fr')) {
+                return 'fr';
+            }
+            return 'en';
+        }
+
         function getGlobalSettings() {
             const data = localStorage.getItem(GLOBAL_SETTINGS_KEY);
-            return data ? JSON.parse(data) : { timeScale: 1, eventTypes: [] };
+            if (data) {
+                return JSON.parse(data);
+            }
+            return {
+                timeScale: 1,
+                eventTypes: [],
+                language: detectBrowserLanguage()
+            };
         }
 
         function saveGlobalSettings(settings) {
@@ -1145,7 +1334,7 @@
             if (activeEvents.length > 0) {
                 const eventNames = activeEvents.map(e => e.type).join(', ');
                 M.toast({
-                    html: `<i class="material-icons left">warning</i>Warning: ${activeEvents.length} active event(s) still running: ${eventNames}. Please stop them before leaving.`,
+                    html: `<i class="material-icons left">warning</i>${t('warningActiveEvents')}`,
                     displayLength: 5000,
                     classes: 'orange darken-2'
                 });
@@ -1191,15 +1380,15 @@
                                 </button>
                             </div>
                             <div id="actions-confirm-${session.id}" style="display: none;">
-                                <span style="color: #f44336; font-weight: 500; margin-right: 10px;">Delete "${session.name}"?</span>
+                                <span style="color: #f44336; font-weight: 500; margin-right: 10px;">${t('deleteSession')} "${session.name}"?</span>
                                 <button type="button" class="btn-small waves-effect waves-light red"
                                         onclick="event.stopPropagation(); confirmDeleteSession('${session.id}')">
-                                    <i class="material-icons left">check</i>Yes
+                                    <i class="material-icons left">check</i>${t('delete')}
                                 </button>
                                 <button type="button" class="btn-small waves-effect waves-light grey"
                                         onclick="event.stopPropagation(); cancelDeleteSession('${session.id}')"
                                         style="margin-left: 5px;">
-                                    <i class="material-icons left">close</i>No
+                                    <i class="material-icons left">close</i>${t('cancel')}
                                 </button>
                             </div>
                         </td>
@@ -1384,25 +1573,43 @@
             }
         }
 
+        function saveGlobalLanguage() {
+            const language = document.getElementById('globalLanguageSetting').value;
+            const settings = getGlobalSettings();
+            settings.language = language;
+            saveGlobalSettings(settings);
+            showToast(t('languageUpdated'));
+            updateUILanguage();
+        }
+
         function saveGlobalTimeScale() {
             const timeScale = parseInt(document.getElementById('globalTimeScaleSetting').value);
             const settings = getGlobalSettings();
             settings.timeScale = timeScale;
             saveGlobalSettings(settings);
-            showToast('Time scale updated!');
+            showToast(t('timeScaleUpdated'));
         }
 
         function loadGlobalSettings() {
             const settings = getGlobalSettings();
+
+            const langSelectElem = document.getElementById('globalLanguageSetting');
+            langSelectElem.value = settings.language || 'en';
+            var langInstance = M.FormSelect.getInstance(langSelectElem);
+            if (langInstance) {
+                langInstance.destroy();
+            }
+            M.FormSelect.init(langSelectElem);
+
             const selectElem = document.getElementById('globalTimeScaleSetting');
             selectElem.value = settings.timeScale || 1;
-
-            // Reinitialize Materialize select to update the display
             var instance = M.FormSelect.getInstance(selectElem);
             if (instance) {
                 instance.destroy();
             }
             M.FormSelect.init(selectElem);
+
+            updateUILanguage();
         }
 
         function getComplementaryEvent(eventTypeName) {
@@ -1665,14 +1872,14 @@
                 const instanceCount = activeInstances.length;
                 const eventClass = getEventTypeClass(eventType.name);
 
-                let statusDisplay = 'Click to Start';
+                let statusDisplay = t('clickToStart');
                 let icon = 'play_arrow';
 
                 if (isActive) {
                     const oldestEvent = activeInstances[0];
                     const duration = calculateDuration(oldestEvent.startTime);
                     const formattedDuration = formatDuration(duration);
-                    statusDisplay = `Running (<span id="btn-duration-${eventClass}">${formattedDuration}</span>)`;
+                    statusDisplay = `${t('running')} (<span id="btn-duration-${eventClass}">${formattedDuration}</span>)`;
                     icon = 'stop';
                 }
 
@@ -1804,7 +2011,7 @@
             const activeEvents = getActiveEvents();
 
             if (events.length === 0 && activeEvents.length === 0) {
-                showToast('No events to export!');
+                showToast(t('noEventsToDisplay'));
                 return;
             }
 
@@ -1843,7 +2050,7 @@
             link.click();
             URL.revokeObjectURL(url);
 
-            showToast('Events exported to CSV!');
+            showToast(t('csvExported'));
         }
 
         function deleteEvent(eventId) {
@@ -1874,7 +2081,7 @@
             displayEvents();
             clearTimeline();
             updateSessionTimestamp(currentSessionId);
-            M.toast({html: '<i class="material-icons left">delete_forever</i>All events have been reset!', displayLength: 2000});
+            M.toast({html: '<i class="material-icons left">delete_forever</i>' + t('allEventsReset'), displayLength: 2000});
 
             const resetModal = M.Modal.getInstance(document.getElementById('resetConfirmModal'));
             if (resetModal) resetModal.close();
@@ -1918,7 +2125,7 @@
             });
 
             if (allEvents.length === 0) {
-                showToast('No events to display in timeline!');
+                showToast(t('noEventsToDisplay'));
                 return;
             }
 
@@ -2195,7 +2402,7 @@
             link.download = `timeline_${dateStr}.png`;
             link.href = canvas.toDataURL('image/png');
             link.click();
-            showToast('Timeline downloaded!');
+            showToast(t('timelineDownloaded'));
         }
 
         document.getElementById('timelineView').addEventListener('change', function() {
@@ -2279,6 +2486,9 @@
                 coverTrigger: false,
                 constrainWidth: false
             });
+
+            // Update UI language on page load
+            updateUILanguage();
 
             // Show landing view
             showLandingView();
