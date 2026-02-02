@@ -910,9 +910,8 @@
                     </div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <i class="material-icons">folder_open</i>
-                    <a class="dropdown-trigger btn-floating waves-effect waves-light white deep-purple-text" href="#!" data-target="sessionActionsDropdown" style="margin: 0;">
-                        <i class="material-icons">settings</i>
+                    <a class="dropdown-trigger btn-floating waves-effect waves-light white" href="#!" data-target="sessionActionsDropdown" style="margin: 0;">
+                        <i class="material-icons" style="color: #7c3aed;">more_vert</i>
                     </a>
                 </div>
             </div>
@@ -1830,8 +1829,6 @@
             saveActiveEvents(activeEvents);
 
             renderEventButtons();
-            const complementaryMsg = complementaryEventName ? ` (stopped ${complementaryEventName})` : '';
-            showToast(`${eventType} started!${complementaryMsg}`);
             startUpdateInterval();
         }
 
@@ -1857,7 +1854,6 @@
                 if (!silent) {
                     renderEventButtons();
                     displayEvents();
-                    showToast(`${event.type} stopped! Duration: ${formatDuration(event.duration)}`);
                 }
 
                 if (activeEvents.length === 0) {
@@ -1971,8 +1967,16 @@
                 const minDate = new Date(Math.min(...eventDates));
                 const maxDate = new Date(Math.max(...eventDates));
 
-                startDate = minDate.toISOString().split('T')[0];
-                endDate = maxDate.toISOString().split('T')[0];
+                // Use local date format for date inputs (YYYY-MM-DD in local timezone)
+                const formatLocalDate = (date) => {
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    return `${year}-${month}-${day}`;
+                };
+
+                startDate = formatLocalDate(minDate);
+                endDate = formatLocalDate(maxDate);
 
                 if (minDate.toDateString() !== maxDate.toDateString()) {
                     viewMode = 'range';
@@ -2363,8 +2367,10 @@
         }
 
         function generateTimeline() {
+            console.log('=== generateTimeline called ===');
             const events = getEvents();
             const activeEvents = getActiveEvents();
+            console.log('Events:', events.length, 'Active:', activeEvents.length);
 
             const allEvents = [...events];
             activeEvents.forEach(active => {
@@ -2380,16 +2386,24 @@
 
             if (allEvents.length === 0) {
                 console.log('No events to display');
-                showToast(t('noEventsToDisplay'));
+                const canvas = document.getElementById('timelineCanvas');
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#999';
+                ctx.font = '16px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(t('noEventsToDisplay'), canvas.width / 2, canvas.height / 2);
                 return;
             }
 
             const viewType = document.getElementById('timelineView').value;
             const dateInput = document.getElementById('timelineDate');
             const endDateInput = document.getElementById('timelineEndDate');
+            console.log('View type:', viewType, 'Date:', dateInput.value);
 
             const canvas = document.getElementById('timelineCanvas');
             const ctx = canvas.getContext('2d');
+            console.log('Canvas:', canvas, 'Context:', ctx);
 
             const dpr = window.devicePixelRatio || 1;
             const canvasContainer = canvas.parentElement;
@@ -2435,6 +2449,7 @@
                 dayStart.setHours(0, 0, 0, 0);
                 const dayEnd = new Date(selectedDate);
                 dayEnd.setHours(23, 59, 59, 999);
+                console.log('Day view - filtering from', dayStart, 'to', dayEnd);
 
                 filteredEvents = allEvents.filter(e => {
                     const eventTime = new Date(e.startTime || e.timestamp);
@@ -2447,6 +2462,7 @@
                 rangeStart.setHours(0, 0, 0, 0);
                 const rangeEnd = new Date(endDate);
                 rangeEnd.setHours(23, 59, 59, 999);
+                console.log('Range view - filtering from', rangeStart, 'to', rangeEnd);
 
                 filteredEvents = allEvents.filter(e => {
                     const eventTime = new Date(e.startTime || e.timestamp);
@@ -2454,11 +2470,14 @@
                 });
             }
 
+            console.log('Filtered events:', filteredEvents.length);
+
             if (filteredEvents.length === 0) {
                 ctx.fillStyle = '#999';
                 ctx.font = '16px sans-serif';
                 ctx.textAlign = 'center';
                 ctx.fillText('No events found for selected date/range', width / 2, height / 2);
+                console.log('No events in date range - stopping');
                 return;
             }
 
@@ -2717,6 +2736,7 @@
                     });
                 }
             });
+            console.log('=== drawTimeline completed, drew', events.length, 'events ===');
         }
 
 
