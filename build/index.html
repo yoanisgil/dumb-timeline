@@ -1499,7 +1499,6 @@
         function confirmDeleteSession(sessionId) {
             deleteSession(sessionId);
             renderSessionList();
-            M.toast({html: '<i class="material-icons left">delete</i>Session deleted', displayLength: 2000});
         }
 
         function deleteSessionConfirm(sessionId) {
@@ -1544,7 +1543,6 @@
                 }
 
                 renderSessionList();
-                M.toast({html: '<i class="material-icons left">edit</i>' + t('sessionRenamed'), displayLength: 2000});
             }
         }
 
