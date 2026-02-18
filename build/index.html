@@ -250,6 +250,12 @@
         }
 
         .event-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .event-button-row {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 15px;
@@ -2041,12 +2047,17 @@
 
             updateDynamicStyles(eventTypes);
 
-            const buttons = [];
+            const MAX_BUTTONS_PER_ROW = 4;
+
+            // Group event types into button groups (complementary pairs stay together)
+            const buttonGroups = [];
 
             eventTypes.forEach(eventType => {
                 const eventNames = eventType.isComplementary
                     ? [eventType.name, `${t('no')} ${eventType.name}`]
                     : [eventType.name];
+
+                const groupButtons = [];
 
                 eventNames.forEach(eventName => {
                     const activeInstances = activeEvents.filter(e => e.type === eventName);
@@ -2067,21 +2078,54 @@
 
                     const instanceBadge = instanceCount > 1 ? `<span class="new badge" data-badge-caption="">${instanceCount}</span>` : '';
 
-                    buttons.push(`
-                        <button class="btn-large waves-effect waves-light event-btn ${eventClass} ${isActive ? 'active' : ''}"
-                                onclick="toggleEvent('${eventName.replace(/'/g, "\\'")}')"
-                                style="width: 100%; margin-bottom: 15px; position: relative; text-align: left; display: flex; flex-direction: column; align-items: flex-start; padding: 20px;">
-                            ${instanceBadge}
-                            <div class="event-btn-label" style="display: flex; align-items: center; font-size: 18px; font-weight: 500;">
-                                <i class="material-icons left">${icon}</i>${eventName}
-                            </div>
-                            <div class="event-btn-status" style="font-size: 14px; opacity: 0.9; margin-top: 5px;">${statusDisplay}</div>
-                        </button>
-                    `);
+                    groupButtons.push({
+                        html: `
+                            <button class="btn-large waves-effect waves-light event-btn ${eventClass} ${isActive ? 'active' : ''}"
+                                    onclick="toggleEvent('${eventName.replace(/'/g, "\\'")}')"
+                                    style="width: 100%; margin-bottom: 15px; position: relative; text-align: left; display: flex; flex-direction: column; align-items: flex-start; padding: 20px;">
+                                ${instanceBadge}
+                                <div class="event-btn-label" style="display: flex; align-items: center; font-size: 18px; font-weight: 500;">
+                                    <i class="material-icons left">${icon}</i>${eventName}
+                                </div>
+                                <div class="event-btn-status" style="font-size: 14px; opacity: 0.9; margin-top: 5px;">${statusDisplay}</div>
+                            </button>
+                        `
+                    });
                 });
+
+                buttonGroups.push(groupButtons);
             });
 
-            container.innerHTML = buttons.join('');
+            // Distribute button groups into rows with max MAX_BUTTONS_PER_ROW buttons per row
+            const rows = [];
+            let currentRow = [];
+            let currentRowCount = 0;
+
+            buttonGroups.forEach(group => {
+                // If adding this group would exceed the max, start a new row
+                if (currentRowCount > 0 && currentRowCount + group.length > MAX_BUTTONS_PER_ROW) {
+                    rows.push(currentRow);
+                    currentRow = [];
+                    currentRowCount = 0;
+                }
+
+                // Add all buttons in the group to the current row
+                currentRow.push(...group);
+                currentRowCount += group.length;
+            });
+
+            // Add the last row if it has any items
+            if (currentRow.length > 0) {
+                rows.push(currentRow);
+            }
+
+            // Build HTML with rows
+            const rowsHtml = rows.map(row => {
+                const buttonsHtml = row.map(btn => btn.html).join('');
+                return `<div class="event-button-row">${buttonsHtml}</div>`;
+            }).join('');
+
+            container.innerHTML = rowsHtml;
         }
 
         function updateDynamicStyles(eventTypes) {
